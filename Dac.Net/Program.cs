@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
+using CommandLine;
+using Dac.Net.Class;
 
 namespace Dac.Net
 {
@@ -6,7 +9,14 @@ namespace Dac.Net
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Parser.Default.ParseArguments<AppArg>(args).WithParsed(result =>
+            {
+                var core = new Core(result);
+                core.Execute();
+            }).WithNotParsed(result =>
+            {
+                var a = "";
+            });
         }
     }
 }
