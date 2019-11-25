@@ -4,8 +4,8 @@ namespace Dac.Net.Db
 {
     public class DbTable
     {
-        public Dictionary<string, DbColumn> DbColumns { get; set; }
-        public Dictionary<string, DbIndex> DbIndices { get; set; }
+        public Dictionary<string, DbColumn> DbColumns { get; set; } = new Dictionary<string, DbColumn>();
+        public Dictionary<string, DbIndex> DbIndices { get; set; } = new Dictionary<string, DbIndex>();
 
     }
 
@@ -19,7 +19,7 @@ namespace Dac.Net.Db
         public bool NotNull { get; set; }
         public string Check { get; set; }
         public string CheckName { get; set; }
-        public Dictionary<string, DbForeignKey> Fk { get; set; }
+        public Dictionary<string, DbForeignKey> Fk { get; set; } = new Dictionary<string, DbForeignKey>();
         public string Default { get; set; }
         public string DefaultName { get; set; }
         public string Comment { get; set; }
@@ -29,7 +29,7 @@ namespace Dac.Net.Db
     {
         public string Name { get; set; }
         public string Type { get; set; }
-        public Dictionary<string, string> Columns { get; set; }
+        public Dictionary<string, string> Columns { get; set; } = new Dictionary<string, string>();
         public bool Unique { get; set; }
     }
 

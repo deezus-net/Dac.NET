@@ -98,5 +98,12 @@ namespace Dac.Net.Test.Db
             Assert.True(!string.IsNullOrWhiteSpace(query));
             _output.WriteLine(query);
         }
+        
+        [Fact]
+        public async void ExtractTest()
+        {
+            var tables = await _pg.Extract();
+            Assert.NotEmpty(tables);
+        }
     }
 }
