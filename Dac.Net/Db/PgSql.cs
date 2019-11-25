@@ -355,6 +355,36 @@ namespace Dac.Net.Db
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tables"></param>
+        /// <param name="queryOnly"></param>
+        /// <returns></returns>
+        public async Task<string> ReCreate(Dictionary<string, DbTable> tables, bool queryOnly = false)
+        {
+            var queries = new List<string>();
+            using (var con = await Connect())
+            {
+                foreach (var row in GetResult(con,
+                    "SELECT relname FROM \"pg_stat_user_tables\" WHERE schemaname='public'"))
+                {
+                    queries.Add($"DROP TABLE \"{row["relname"]}\" CASCADE;");
+                }
+            }
+
+            queries.Add(CreateQuery(tables));
+
+            var query = string.Join("\n", queries);
+
+            if (!queryOnly)
+            {
+                await ExecQuery(query);
+            }
+
+            return query;
+        }
+
 
         /// <summary>
         /// 

@@ -26,12 +26,24 @@ namespace Dac.Net.Test.Db
                     {
                         {"id", new DbColumn() {Id = true}},
                         {"name", new DbColumn() {Type = "varchar", Length = 100}},
-                        {"user_group_id", new DbColumn() {Type = "int", NotNull = true}}
+                        {"user_group_id", new DbColumn()
+                        {
+                            Type = "int", 
+                            NotNull = true,
+                            Fk = new Dictionary<string, DbForeignKey>()
+                            {
+                                { "fk_users", new DbForeignKey()
+                                {
+                                    Table = "user_groups",
+                                    Column = "id"
+                                }}
+                            }
+                        }}
                     },
                     DbIndices = new Dictionary<string, DbIndex>()
                     {
                         {
-                            "ix_name", new DbIndex()
+                            "ix_users_name", new DbIndex()
                             {
                                 Columns = new Dictionary<string, string>
                                 {
@@ -50,16 +62,7 @@ namespace Dac.Net.Test.Db
                         {
                             "id", new DbColumn()
                             {
-                                Id = true, Fk = new Dictionary<string, DbForeignKey>()
-                                {
-                                    {
-                                        "f", new DbForeignKey()
-                                        {
-                                            Table = "users",
-                                            Column = "user_group_id"
-                                        }
-                                    }
-                                }
+                                Id = true
                             }
                         },
                         {"name", new DbColumn() {Type = "varchar", Length = 100}}
@@ -67,7 +70,7 @@ namespace Dac.Net.Test.Db
                     DbIndices = new Dictionary<string, DbIndex>()
                     {
                         {
-                            "ix_name", new DbIndex()
+                            "ix_user_groups_name", new DbIndex()
                             {
                                 Columns = new Dictionary<string, string>
                                 {
@@ -104,6 +107,14 @@ namespace Dac.Net.Test.Db
         {
             var tables = await _pg.Extract();
             Assert.NotEmpty(tables);
+        }
+        
+        [Fact]
+        public async void ReCreateTest()
+        {
+            var query = await _pg.ReCreate(_db, false);
+            Assert.True(!string.IsNullOrWhiteSpace(query));
+            _output.WriteLine(query);
         }
     }
 }
