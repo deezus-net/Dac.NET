@@ -395,9 +395,215 @@ namespace Dac.Net.Db
         /// <param name="dropTable"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public Task<string> Update(Dictionary<string, DbTable> tables, bool queryOnly, bool dropTable)
+        public async Task<string> Update(Dictionary<string, DbTable> tables, bool queryOnly, bool dropTable)
         {
-            throw new NotImplementedException();
+            var diff = await Diff(tables);
+            var queries = new List<string>();
+            var createFkQuery = new List<string>();
+            var dropFkQuery = new List<string>();
+
+
+            // add tables
+            if (diff.AddedTables.Any())
+            {
+                queries.Add(CreateQuery(diff.AddedTables));
+            }
+
+            foreach (var (tableName, dbTable) in diff.ModifiedTables)
+            {
+
+                // add columns
+                foreach (var (columnName, dbColumn) in dbTable.AddedColumns)
+                {
+                    var type = dbColumn.Id ? "serial" : dbColumn.Type;
+                    if (dbColumn.Length > 0)
+                    {
+                        type += $"({dbColumn.Length})";
+                    }
+
+                    var check = !string.IsNullOrWhiteSpace(dbColumn.Check) ? $" CHECK({dbColumn.Check}) " : "";
+                    var def = !string.IsNullOrWhiteSpace(dbColumn.Default) ? $" DEFAULT {dbColumn.Default} " : "";
+
+                    queries.Add("ALTER TABLE");
+                    queries.Add($"    \"{tableName}\"");
+                    queries.Add(
+                        $"ADD COLUMN \"{columnName}\" {type}{(dbColumn.NotNull ? " NOT NULL" : "")}{check}{def};");
+
+                    foreach (var (fkName, dbForeignKey ) in dbColumn.Fk)
+                    {
+                        createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, dbForeignKey.Table,
+                            dbForeignKey.Column, dbForeignKey.Update, dbForeignKey.Delete));
+                    }
+                }
+
+                // modify columns
+                foreach (var (columnName, dbColumn) in dbTable.ModifiedColumns)
+                {
+                    var orgColumn = dbColumn[0];
+                    var newColumn = dbColumn[1];
+
+                    // change type
+                    if (orgColumn.Type != newColumn.Type || orgColumn.Length != newColumn.Length)
+                    {
+                        var type = newColumn.Id ? "serial" : newColumn.Type;
+                        if (newColumn.Length > 0)
+                        {
+                            type += $"({newColumn.Length})";
+                        }
+
+                        queries.Add("ALTER TABLE");
+                        queries.Add($"    \"{tableName}\"");
+                        queries.Add($"ALTER COLUMN \"{columnName}\" TYPE {type};");
+                    }
+
+                    // not null
+                    if (!newColumn.Pk && orgColumn.NotNull != newColumn.NotNull)
+                    {
+                        queries.Add("ALTER TABLE");
+                        queries.Add($"    \"{tableName}\"");
+                        queries.Add(
+                            $"ALTER COLUMN \"{columnName}\" {(newColumn.NotNull ? "SET NOT NULL" : "DROP NOT NULL")};");
+                    }
+
+                    // default
+                    if ((orgColumn.Default ?? "").ToLower() != (newColumn.Default ?? "").ToLower())
+                    {
+                        if (!string.IsNullOrWhiteSpace(newColumn.Default))
+                        {
+                            queries.Add("ALTER TABLE");
+                            queries.Add($"    \"{tableName}\"");
+                            queries.Add($"ALTER COLUMN \"{columnName}\" SET DEFAULT {newColumn.Default};");
+                        }
+                        else
+                        {
+                            queries.Add("ALTER TABLE");
+                            queries.Add($"    \"${tableName}\"");
+                            queries.Add($"ALTER COLUMN \"{columnName}\" DROP DEFAULT");
+                        }
+                    }
+
+                    if (orgColumn.Check != newColumn.Check)
+                    {
+                        // drop old check
+                        if (!string.IsNullOrWhiteSpace(orgColumn.DefaultName))
+                        {
+                            queries.Add("ALTER TABLE");
+                            queries.Add($"    \"{tableName}\"");
+                            queries.Add("DROP CONSTRAINT");
+                            queries.Add($"    \"{orgColumn.DefaultName}\";");
+                        }
+
+                        // add new check
+                        if (!string.IsNullOrWhiteSpace(newColumn.Check))
+                        {
+                            queries.Add("ALTER TABLE");
+                            queries.Add($"    \"{tableName}\"");
+                            queries.Add($"ADD CHECK({newColumn.Check});");
+                        }
+                    }
+
+                    // foreign key
+                    foreach (var fkName in orgColumn.Fk.Keys.Concat(newColumn.Fk.Keys).Distinct())
+                    {
+                        if (!orgColumn.Fk.ContainsKey(fkName))
+                        {
+                            var fk = newColumn.Fk[fkName];
+                            createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
+                                fk.Update, fk.Delete));
+                            continue;
+                        }
+
+                        if (!newColumn.Fk.ContainsKey(fkName))
+                        {
+
+                            dropFkQuery.Add("ALTER TABLE");
+                            dropFkQuery.Add($"    \"{tableName}\"");
+                            dropFkQuery.Add($"DROP CONSTRAINT \"{fkName}\";");
+
+                            continue;
+                        }
+
+                        if ((orgColumn.Fk[fkName].Update != newColumn.Fk[fkName].Update) ||
+                            (orgColumn.Fk[fkName].Delete != newColumn.Fk[fkName].Delete) ||
+                            (orgColumn.Fk[fkName].Table != newColumn.Fk[fkName].Table) ||
+                            (orgColumn.Fk[fkName].Column != newColumn.Fk[fkName].Column))
+                        {
+
+                            dropFkQuery.Add("ALTER TABLE");
+                            dropFkQuery.Add($"    \"{tableName}\"");
+                            dropFkQuery.Add($"DROP CONSTRAINT \"{fkName}\";");
+
+                            var fk = newColumn.Fk[fkName];
+                            createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
+                                fk.Update, fk.Delete));
+                        }
+                    }
+                }
+
+                // drop columns
+                foreach (var columnName in dbTable.DeletedColumnName)
+                {
+                    queries.Add("ALTER TABLE");
+                    queries.Add($"    \"{tableName}\"");
+                    queries.Add($"DROP COLUMN \"{columnName}\";");
+                }
+
+                // create index
+                foreach (var (indexName, dbIndex) in dbTable.AddedIndices)
+                {
+                    queries.Add("CREATE");
+                    queries.Add($"    {(dbIndex.Unique ? "UNIQUE " : "")}INDEX \"{indexName}\"");
+                    queries.Add("ON");
+                    queries.Add($"    \"{tableName}\" ({string.Join(",", dbIndex.Columns.Select(c => "\"${c}\""))});");
+                }
+
+                // modify index
+                foreach (var (indexName, dbIndices) in dbTable.ModifiedIndices)
+                {
+                    var index = dbIndices[1];
+
+                    queries.Add($"DROP INDEX \"{indexName}\";");
+
+                    queries.Add("CREATE");
+                    queries.Add($"    {(index.Unique ? "UNIQUE " : "")}INDEX \"{indexName}\"");
+                    queries.Add("ON");
+                    queries.Add(
+                        $"    \"{tableName}\" ({string.Join(",", index.Columns.Keys.Select(c => $"\"{c}\""))});");
+                }
+
+                // drop index
+                foreach (var indexName in dbTable.DeletedIndexNames)
+                {
+                    queries.Add($"DROP INDEX \"{indexName}\";");
+                }
+
+            }
+
+            // drop table
+            if (dropTable)
+            {
+                foreach (var tableName in diff.DeletedTableNames)
+                {
+                    queries.Add($"DROP TABLE \"{tableName}\" CASCADE;");
+                }
+            }
+
+            var query = string.Join("\n", dropFkQuery) + "\n" + string.Join("\n", queries) + "\n" +
+                        string.Join("\n", createFkQuery);
+            if (queries.Any() || createFkQuery.Any() || dropFkQuery.Any())
+            {
+                if (!queryOnly)
+                {
+                    await ExecQuery(query);
+                }
+
+                return query;
+            }
+            else
+            {
+                return null;
+            }
+
         }
 
         /// <summary>

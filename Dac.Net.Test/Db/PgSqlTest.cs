@@ -123,5 +123,13 @@ namespace Dac.Net.Test.Db
             var diff = await _pg.Diff(_db);
             Assert.False(diff.HasDiff);
         }
+        
+        [Fact]
+        public async void UpdateTest()
+        {
+            var query = await _pg.Update(_db, true, false);
+            Assert.True(!string.IsNullOrWhiteSpace(query));
+            _output.WriteLine(query);
+        }
     }
 }
