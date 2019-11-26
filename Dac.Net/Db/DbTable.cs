@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Dac.Net.Db
 {
@@ -43,20 +44,22 @@ namespace Dac.Net.Db
 
     public class DbDiff
     {
-        public Dictionary<string, DbTable> AddedTables { get; set; }
-        public string[] DeletedTableNames { get; set; }
-        public Dictionary<string, ModifiedTable> ModifiedTables { get; set; }
-        public Dictionary<string, DbTable> CurrentTables { get; set; }
-        public Dictionary<string, DbTable> NewTables { get; set; }
+        public bool HasDiff => AddedTables.Any() || DeletedTableNames.Any() || ModifiedTables.Any(); 
+        
+        public Dictionary<string, DbTable> AddedTables { get; set; } = new Dictionary<string, DbTable>();
+        public List<string> DeletedTableNames { get; set; } = new List<string>();
+        public Dictionary<string, ModifiedTable> ModifiedTables { get; set; } = new Dictionary<string, ModifiedTable>();
+        public Dictionary<string, DbTable> CurrentTables { get; set; } = new Dictionary<string, DbTable>();
+        public Dictionary<string, DbTable> NewTables { get; set; } = new Dictionary<string, DbTable>();
     }
 
     public class ModifiedTable
     {
-        public DbColumn[] AddedColumns { get; set; }
-        public Dictionary<string, DbColumn[]> ModifiedColumns { get; set; }
-        public string[] DeletedColumnName { get; set; }
-        public DbIndex[] AddedIndices { get; set; }
-        public Dictionary<string, DbIndex[]> ModifiedIndices { get; set; }
-        public string[] DeletedIndexNames { get; set; }
+        public Dictionary<string, DbColumn> AddedColumns { get; set; } = new Dictionary<string, DbColumn>(); 
+        public Dictionary<string, DbColumn[]> ModifiedColumns { get; set; } = new Dictionary<string, DbColumn[]>();
+        public List<string> DeletedColumnName { get; set; } = new List<string>();
+        public Dictionary<string, DbIndex> AddedIndices { get; set; } = new Dictionary<string, DbIndex>();
+        public Dictionary<string, DbIndex[]> ModifiedIndices { get; set; } = new Dictionary<string, DbIndex[]>();
+        public List<string> DeletedIndexNames { get; set; } = new List<string>();
     }
 }

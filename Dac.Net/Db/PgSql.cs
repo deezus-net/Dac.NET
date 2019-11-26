@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Dac.Net.Class;
-using Microsoft.VisualBasic;
-using MySql.Data.MySqlClient;
 using Npgsql;
 
 namespace Dac.Net.Db
@@ -38,6 +35,11 @@ namespace Dac.Net.Db
             await connection.OpenAsync();
 
             return connection;
+        }
+
+        public string Query(Dictionary<string, DbTable> tables)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -384,6 +386,33 @@ namespace Dac.Net.Db
 
             return query;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tables"></param>
+        /// <param name="queryOnly"></param>
+        /// <param name="dropTable"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public Task<string> Update(Dictionary<string, DbTable> tables, bool queryOnly, bool dropTable)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tables"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<DbDiff> Diff(Dictionary<string, DbTable> tables)
+        {
+            var orgDb = await Extract();
+            return orgDb.Diff(tables);
+        }
+
+
 
 
         /// <summary>
