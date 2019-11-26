@@ -5,11 +5,13 @@ namespace Dac.Net.Db
 {
     public interface IDb
     {
-    /*    Dictionary<string, DbTable> Extract();
-        string Query();
-        void Create();
-        void ReCreate();
-        void Update();
-        void Diff(); */
+        Task<string> Drop(Dictionary<string, DbTable> tables, bool queryOnly);
+        Task<Dictionary<string, DbTable>> Extract();
+        string Query(Dictionary<string, DbTable> tables);
+        Task<string> Create(Dictionary<string, DbTable> tables, bool queryOnly);
+        Task<string> ReCreate(Dictionary<string, DbTable> tables, bool queryOnly);
+        Task<string> Update(Dictionary<string, DbTable> tables, bool queryOnly, bool dropTable);
+        Task<DbDiff> Diff(Dictionary<string, DbTable> tables);
+        
     }
 }
