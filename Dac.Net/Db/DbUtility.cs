@@ -32,51 +32,51 @@ namespace Dac.Net.Db
                 {
                     // columns
 
-                    foreach (var columnName in org[tableName].DbColumns.Keys.Concat(target[tableName].DbColumns.Keys)
+                    foreach (var columnName in org[tableName].Columns.Keys.Concat(target[tableName].Columns.Keys)
                         .Distinct())
                     {
-                        if (!target[tableName].DbColumns.ContainsKey(columnName))
+                        if (!target[tableName].Columns.ContainsKey(columnName))
                         {
                             InitModifiedTable(result, tableName);
                             result.ModifiedTables[tableName].DeletedColumnName.Add(columnName);
 
                         }
-                        else if (!org[tableName].DbColumns.ContainsKey(columnName))
+                        else if (!org[tableName].Columns.ContainsKey(columnName))
                         {
                             InitModifiedTable(result, tableName);
-                            result.ModifiedTables[tableName].AddedColumns.Add(columnName, target[tableName].DbColumns[columnName]);
+                            result.ModifiedTables[tableName].AddedColumns.Add(columnName, target[tableName].Columns[columnName]);
 
                         }
-                        else if (!org[tableName].DbColumns[columnName].Equal(target[tableName].DbColumns[columnName]))
+                        else if (!org[tableName].Columns[columnName].Equal(target[tableName].Columns[columnName]))
                         {
                             InitModifiedTable(result, tableName);
                             result.ModifiedTables[tableName].ModifiedColumns.Add(columnName, new[]
                             {
-                                org[tableName].DbColumns[columnName],
-                                target[tableName].DbColumns[columnName]
+                                org[tableName].Columns[columnName],
+                                target[tableName].Columns[columnName]
                             });
                         }
                     }
 
                     // indexes
-                    foreach (var indexName in org[tableName].DbIndices.Keys.Concat(target[tableName].DbIndices.Keys).Distinct()) {
+                    foreach (var indexName in org[tableName].Indices.Keys.Concat(target[tableName].Indices.Keys).Distinct()) {
                         
                         
                         
-                        if (!target[tableName].DbIndices.ContainsKey(indexName)) {
+                        if (!target[tableName].Indices.ContainsKey(indexName)) {
                             InitModifiedTable(result, tableName);
                             result.ModifiedTables[tableName].DeletedIndexNames.Add(indexName);
 
-                        } else if (!org[tableName].DbIndices.ContainsKey(indexName)) {
+                        } else if (!org[tableName].Indices.ContainsKey(indexName)) {
                             InitModifiedTable(result, tableName);
-                            result.ModifiedTables[tableName].AddedIndices.Add(indexName, target[tableName].DbIndices[indexName]);
+                            result.ModifiedTables[tableName].AddedIndices.Add(indexName, target[tableName].Indices[indexName]);
 
-                        } else if (!target[tableName].DbIndices[indexName].Equal(org[tableName].DbIndices[indexName])) {
+                        } else if (!target[tableName].Indices[indexName].Equal(org[tableName].Indices[indexName])) {
                             InitModifiedTable(result, tableName);
                             result.ModifiedTables[tableName].ModifiedIndices.Add(indexName, new[]
                                 {
-                                    org[tableName].DbIndices[indexName],
-                                    target[tableName].DbIndices[indexName]
+                                    org[tableName].Indices[indexName],
+                                    target[tableName].Indices[indexName]
                                 }
                             );
 

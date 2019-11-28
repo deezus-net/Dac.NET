@@ -6,11 +6,12 @@ namespace Dac.Net.Class
     {
         public static class Command
         {
-            public static readonly string[] Diff = {"diff"};
-            public static readonly string[] Create = {"create"};
-            public static readonly string[] ReCreate = {"recreate"};
-            public static readonly string[] Update = {"update"};
-            public static readonly string[] Delete = {"delete"};
+            public const string Diff = "diff";
+            public const string Extract = "extract";
+            public const string Create = "create";
+            public const string ReCreate = "recreate";
+            public const string Update = "update";
+            public const string Delete = "delete";
         }
 
         public static class DbType

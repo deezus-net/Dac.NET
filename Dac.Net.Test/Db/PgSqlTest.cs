@@ -22,7 +22,7 @@ namespace Dac.Net.Test.Db
             {
                 "users", new DbTable()
                 {
-                    DbColumns = new Dictionary<string, DbColumn>()
+                    Columns = new Dictionary<string, DbColumn>()
                     {
                         {"id", new DbColumn() {Id = true}},
                         {"name", new DbColumn() {Type = "varchar", Length = 100}},
@@ -40,7 +40,7 @@ namespace Dac.Net.Test.Db
                             }
                         }}
                     },
-                    DbIndices = new Dictionary<string, DbIndex>()
+                    Indices = new Dictionary<string, DbIndex>()
                     {
                         {
                             "ix_users_name", new DbIndex()
@@ -57,7 +57,7 @@ namespace Dac.Net.Test.Db
             {
                 "user_groups", new DbTable()
                 {
-                    DbColumns = new Dictionary<string, DbColumn>()
+                    Columns = new Dictionary<string, DbColumn>()
                     {
                         {
                             "id", new DbColumn()
@@ -67,7 +67,7 @@ namespace Dac.Net.Test.Db
                         },
                         {"name", new DbColumn() {Type = "varchar", Length = 100}}
                     },
-                    DbIndices = new Dictionary<string, DbIndex>()
+                    Indices = new Dictionary<string, DbIndex>()
                     {
                         {
                             "ix_user_groups_name", new DbIndex()

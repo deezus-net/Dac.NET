@@ -11,7 +11,20 @@ namespace Dac.Net.Db
     public class PgSql : IDb
     {
         public string Host { get; set; }
-        public int Port { get; set; } = 5432;
+
+        public int Port
+        {
+            get => _port;
+            set
+            {
+                if (value > 0)
+                {
+                    _port = value;
+                }
+            }
+        }
+
+        private int _port = 5432;
         public string Username { get; set; }
         public string Password { get; set; }
         public string Database { get; set; }
@@ -150,7 +163,7 @@ namespace Dac.Net.Db
                             column.Default = columnDefault;
                         }
 
-                        tables[tableName].DbColumns.Add(Convert.ToString(row["column_name"]), column);
+                        tables[tableName].Columns.Add(Convert.ToString(row["column_name"]), column);
                     }
 
 
@@ -181,9 +194,9 @@ namespace Dac.Net.Db
 
                     {
                         var columnName = Convert.ToString(row["column_name"]);
-                        if (tables[tableName].DbColumns.ContainsKey(columnName))
+                        if (tables[tableName].Columns.ContainsKey(columnName))
                         {
-                            tables[tableName].DbColumns[columnName].Pk = true;
+                            tables[tableName].Columns[columnName].Pk = true;
                         }
                     }
 
@@ -200,9 +213,9 @@ namespace Dac.Net.Db
                     {
                         var indexdef = Convert.ToString(row["indexdef"]);
                         var indexName = Convert.ToString(row["indexname"]);
-                        if (!tables[tableName].DbIndices.ContainsKey(indexName))
+                        if (!tables[tableName].Indices.ContainsKey(indexName))
                         {
-                            tables[tableName].DbIndices.Add(indexName, new DbIndex()
+                            tables[tableName].Indices.Add(indexName, new DbIndex()
                             {
                                 Unique = indexdef.Contains("UNIQUE INDEX"),
                                 Columns = { }
@@ -218,9 +231,9 @@ namespace Dac.Net.Db
                         foreach (var col in m.Value.Replace("(", "").Replace(")", "").Split(','))
                         {
                             var tmp = col.Trim().Split(' ');
-                            if (tables[tableName].DbColumns.ContainsKey(tmp[0]))
+                            if (tables[tableName].Columns.ContainsKey(tmp[0]))
                             {
-                                tables[tableName].DbIndices[indexName].Columns[tmp[0]] =
+                                tables[tableName].Indices[indexName].Columns[tmp[0]] =
                                     tmp.Length > 1 ? tmp[1] : "ASC";
                             }
                         }
@@ -230,25 +243,25 @@ namespace Dac.Net.Db
 
                     // remove primarykey index
                     var pkColumns = new List<string>();
-                    foreach (var (columnName, dbColumn) in dbTable.DbColumns)
+                    foreach (var (columnName, dbColumn) in dbTable.Columns)
                     {
-                        if (dbTable.DbColumns[columnName].Pk)
+                        if (dbTable.Columns[columnName].Pk)
                         {
                             pkColumns.Add(columnName);
                         }
                     }
 
-                    foreach (var (indexName, dbIndex) in dbTable.DbIndices)
+                    foreach (var (indexName, dbIndex) in dbTable.Indices)
                     {
                         var columns = new List<string>();
-                        foreach (var (columnName, order) in dbTable.DbIndices[indexName].Columns)
+                        foreach (var (columnName, order) in dbTable.Indices[indexName].Columns)
                         {
                             columns.Add(columnName);
                         }
 
                         if (string.Join(",", columns.OrderBy(x => x)) == string.Join(",", pkColumns.OrderBy(x => x)))
                         {
-                            dbTable.DbIndices.Remove(indexName);
+                            dbTable.Indices.Remove(indexName);
                         }
                     }
 
@@ -272,12 +285,12 @@ namespace Dac.Net.Db
                     {
                         var m = Regex.Match(Convert.ToString(row["consrc"]), @"\((.*)\)");
                         var consrc = m.Success ? m.Groups[1].Value : Convert.ToString(row["consrc"]);
-                        foreach (var (colName, dbColumn ) in dbTable.DbColumns)
+                        foreach (var (colName, dbColumn ) in dbTable.Columns)
                         {
                             if (consrc.Contains(colName))
                             {
-                                dbTable.DbColumns[colName].Check = consrc;
-                                dbTable.DbColumns[colName].CheckName = Convert.ToString(row["conname"]);
+                                dbTable.Columns[colName].Check = consrc;
+                                dbTable.Columns[colName].CheckName = Convert.ToString(row["conname"]);
                             }
                         }
                     }
@@ -324,7 +337,7 @@ namespace Dac.Net.Db
                     {
 
                         var columnName = Convert.ToString(row["column_name"]);
-                        if (!tables[tableName].DbColumns.ContainsKey(columnName))
+                        if (!tables[tableName].Columns.ContainsKey(columnName))
                         {
                             continue;
                         }
@@ -338,7 +351,7 @@ namespace Dac.Net.Db
 
 
                         var key = $"{row["foreign_table_name"]}.{row["foreign_column_name"]}";
-                        tables[tableName].DbColumns[columnName].Fk.Add(Convert.ToString(row["constraint_name"]),
+                        tables[tableName].Columns[columnName].Fk.Add(Convert.ToString(row["constraint_name"]),
                             new DbForeignKey()
                             {
                                 Table = Convert.ToString(row["foreign_table_name"]),
@@ -637,7 +650,7 @@ namespace Dac.Net.Db
 
                 var columnQuery = new List<string>();
                 var pk = new List<string>();
-                foreach (var (columnName, dbColumn) in dbTable.DbColumns)
+                foreach (var (columnName, dbColumn) in dbTable.Columns)
                 {
                     if (dbColumn.Id)
                     {
@@ -671,7 +684,7 @@ namespace Dac.Net.Db
 
                 query.Add(");");
 
-                foreach (var (indexName, dbIndex) in dbTable.DbIndices)
+                foreach (var (indexName, dbIndex) in dbTable.Indices)
                 {
                     var indexColumns = new List<string>();
                     foreach (var (columnName, order) in dbIndex.Columns)
@@ -689,7 +702,7 @@ namespace Dac.Net.Db
             // foregin key
             foreach (var (tableName, dbTable) in tables)
             {
-                foreach (var (columnName, dbColumn) in dbTable.DbColumns.Where(x => x.Value.Fk != null))
+                foreach (var (columnName, dbColumn) in dbTable.Columns.Where(x => x.Value.Fk != null))
                 {
                     foreach (var (fkName, fkForeignKey) in dbColumn.Fk)
                     {

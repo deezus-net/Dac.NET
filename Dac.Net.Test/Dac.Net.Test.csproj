@@ -16,9 +16,4 @@
     <ItemGroup>
       <ProjectReference Include="..\Dac.Net\Dac.Net.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include=".TestData" />
-    </ItemGroup>
-
 </Project>

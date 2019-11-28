@@ -5,8 +5,8 @@ namespace Dac.Net.Db
 {
     public class DbTable
     {
-        public Dictionary<string, DbColumn> DbColumns { get; set; } = new Dictionary<string, DbColumn>();
-        public Dictionary<string, DbIndex> DbIndices { get; set; } = new Dictionary<string, DbIndex>();
+        public Dictionary<string, DbColumn> Columns { get; set; } = new Dictionary<string, DbColumn>();
+        public Dictionary<string, DbIndex> Indices { get; set; } = new Dictionary<string, DbIndex>();
 
     }
 
