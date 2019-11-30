@@ -50,7 +50,7 @@ namespace Dac.Net.Db
             return connection;
         }
 
-        public string Query(Dictionary<string, DbTable> tables)
+        public string Query(Db db)
         {
             throw new NotImplementedException();
         }
@@ -58,12 +58,12 @@ namespace Dac.Net.Db
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="tables"></param>
+        /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>
-        public async Task<string> Create(Dictionary<string, DbTable> tables, bool queryOnly = false)
+        public async Task<string> Create(Db db, bool queryOnly = false)
         {
-            var query = CreateQuery(tables);
+            var query = CreateQuery(db.Tables);
             if (queryOnly)
             {
                 return query;
@@ -76,13 +76,13 @@ namespace Dac.Net.Db
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="tables"></param>
+        /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>
-        public async Task<string> Drop(Dictionary<string, DbTable> tables, bool queryOnly = false)
+        public async Task<string> Drop(Db db, bool queryOnly = false)
         {
             var queries = new List<string>();
-            foreach (var (tableName, dbTable) in tables)
+            foreach (var (tableName, dbTable) in db.Tables)
             {
                 queries.Add($"DROP TABLE IF EXISTS \"{tableName}\" CASCADE;");
             }
@@ -103,15 +103,15 @@ namespace Dac.Net.Db
                 return checkDbDiff(orgDb, db);
             } */
 
-        public async Task<Dictionary<string, DbTable>> Extract()
+        public async Task<Db> Extract()
         {
-            var tables = new Dictionary<string, DbTable>();
+            var db = new Db();
             using (var con = await Connect())
             {
                 foreach (var row in GetResult(con,
                     "SELECT relname FROM \"pg_stat_user_tables\" WHERE schemaname=\'public\'"))
                 {
-                    tables.Add(Convert.ToString(row["relname"]), new DbTable());
+                    db.Tables.Add(Convert.ToString(row["relname"]), new DbTable());
                 }
 
                 // get sequence list
@@ -121,11 +121,7 @@ namespace Dac.Net.Db
                     sequences.Add(Convert.ToString(row["sequence_name"]));
                 }
 
-
-
-
-
-                foreach (var (tableName, dbTable) in tables)
+                foreach (var (tableName, dbTable) in db.Tables)
                 {
 
                     // get column list
@@ -163,7 +159,7 @@ namespace Dac.Net.Db
                             column.Default = columnDefault;
                         }
 
-                        tables[tableName].Columns.Add(Convert.ToString(row["column_name"]), column);
+                        db.Tables[tableName].Columns.Add(Convert.ToString(row["column_name"]), column);
                     }
 
 
@@ -194,9 +190,9 @@ namespace Dac.Net.Db
 
                     {
                         var columnName = Convert.ToString(row["column_name"]);
-                        if (tables[tableName].Columns.ContainsKey(columnName))
+                        if (db.Tables[tableName].Columns.ContainsKey(columnName))
                         {
-                            tables[tableName].Columns[columnName].Pk = true;
+                            db.Tables[tableName].Columns[columnName].Pk = true;
                         }
                     }
 
@@ -213,9 +209,9 @@ namespace Dac.Net.Db
                     {
                         var indexdef = Convert.ToString(row["indexdef"]);
                         var indexName = Convert.ToString(row["indexname"]);
-                        if (!tables[tableName].Indices.ContainsKey(indexName))
+                        if (!db.Tables[tableName].Indices.ContainsKey(indexName))
                         {
-                            tables[tableName].Indices.Add(indexName, new DbIndex()
+                            db.Tables[tableName].Indices.Add(indexName, new DbIndex()
                             {
                                 Unique = indexdef.Contains("UNIQUE INDEX"),
                                 Columns = { }
@@ -231,9 +227,9 @@ namespace Dac.Net.Db
                         foreach (var col in m.Value.Replace("(", "").Replace(")", "").Split(','))
                         {
                             var tmp = col.Trim().Split(' ');
-                            if (tables[tableName].Columns.ContainsKey(tmp[0]))
+                            if (db.Tables[tableName].Columns.ContainsKey(tmp[0]))
                             {
-                                tables[tableName].Indices[indexName].Columns[tmp[0]] =
+                                db.Tables[tableName].Indices[indexName].Columns[tmp[0]] =
                                     tmp.Length > 1 ? tmp[1] : "ASC";
                             }
                         }
@@ -245,7 +241,7 @@ namespace Dac.Net.Db
                     var pkColumns = new List<string>();
                     foreach (var (columnName, dbColumn) in dbTable.Columns)
                     {
-                        if (dbTable.Columns[columnName].Pk)
+                        if (dbTable.Columns[columnName].Pk ?? false)
                         {
                             pkColumns.Add(columnName);
                         }
@@ -337,7 +333,7 @@ namespace Dac.Net.Db
                     {
 
                         var columnName = Convert.ToString(row["column_name"]);
-                        if (!tables[tableName].Columns.ContainsKey(columnName))
+                        if (!db.Tables[tableName].Columns.ContainsKey(columnName))
                         {
                             continue;
                         }
@@ -351,7 +347,7 @@ namespace Dac.Net.Db
 
 
                         var key = $"{row["foreign_table_name"]}.{row["foreign_column_name"]}";
-                        tables[tableName].Columns[columnName].Fk.Add(Convert.ToString(row["constraint_name"]),
+                        db.Tables[tableName].Columns[columnName].Fk.Add(Convert.ToString(row["constraint_name"]),
                             new DbForeignKey()
                             {
                                 Table = Convert.ToString(row["foreign_table_name"]),
@@ -362,21 +358,21 @@ namespace Dac.Net.Db
                     }
 
 
-                    //      trimDbProperties(db);
+                    
 
                 }
-
-                return tables;
+                db.TrimDbProperties();
+                return db;
             }
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="tables"></param>
+        /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>
-        public async Task<string> ReCreate(Dictionary<string, DbTable> tables, bool queryOnly = false)
+        public async Task<string> ReCreate(Db db, bool queryOnly = false)
         {
             var queries = new List<string>();
             using (var con = await Connect())
@@ -388,7 +384,7 @@ namespace Dac.Net.Db
                 }
             }
 
-            queries.Add(CreateQuery(tables));
+            queries.Add(CreateQuery(db.Tables));
 
             var query = string.Join("\n", queries);
 
@@ -403,14 +399,14 @@ namespace Dac.Net.Db
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="tables"></param>
+        /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <param name="dropTable"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<string> Update(Dictionary<string, DbTable> tables, bool queryOnly, bool dropTable)
+        public async Task<string> Update(Db db, bool queryOnly, bool dropTable)
         {
-            var diff = await Diff(tables);
+            var diff = await Diff(db);
             var queries = new List<string>();
             var createFkQuery = new List<string>();
             var dropFkQuery = new List<string>();
@@ -428,7 +424,7 @@ namespace Dac.Net.Db
                 // add columns
                 foreach (var (columnName, dbColumn) in dbTable.AddedColumns)
                 {
-                    var type = dbColumn.Id ? "serial" : dbColumn.Type;
+                    var type = (dbColumn.Id ?? false) ? "serial" : dbColumn.Type;
                     if (dbColumn.Length > 0)
                     {
                         type += $"({dbColumn.Length})";
@@ -440,7 +436,7 @@ namespace Dac.Net.Db
                     queries.Add("ALTER TABLE");
                     queries.Add($"    \"{tableName}\"");
                     queries.Add(
-                        $"ADD COLUMN \"{columnName}\" {type}{(dbColumn.NotNull ? " NOT NULL" : "")}{check}{def};");
+                        $"ADD COLUMN \"{columnName}\" {type}{((dbColumn.NotNull ?? false) ? " NOT NULL" : "")}{check}{def};");
 
                     foreach (var (fkName, dbForeignKey ) in dbColumn.Fk)
                     {
@@ -458,7 +454,7 @@ namespace Dac.Net.Db
                     // change type
                     if (orgColumn.Type != newColumn.Type || orgColumn.Length != newColumn.Length)
                     {
-                        var type = newColumn.Id ? "serial" : newColumn.Type;
+                        var type = (newColumn.Id ?? true) ? "serial" : newColumn.Type;
                         if (newColumn.Length > 0)
                         {
                             type += $"({newColumn.Length})";
@@ -470,12 +466,12 @@ namespace Dac.Net.Db
                     }
 
                     // not null
-                    if (!newColumn.Pk && orgColumn.NotNull != newColumn.NotNull)
+                    if (!(newColumn.Pk ?? false) && orgColumn.NotNull != newColumn.NotNull)
                     {
                         queries.Add("ALTER TABLE");
                         queries.Add($"    \"{tableName}\"");
                         queries.Add(
-                            $"ALTER COLUMN \"{columnName}\" {(newColumn.NotNull ? "SET NOT NULL" : "DROP NOT NULL")};");
+                            $"ALTER COLUMN \"{columnName}\" {((newColumn.NotNull ?? false) ? "SET NOT NULL" : "DROP NOT NULL")};");
                     }
 
                     // default
@@ -565,7 +561,7 @@ namespace Dac.Net.Db
                 foreach (var (indexName, dbIndex) in dbTable.AddedIndices)
                 {
                     queries.Add("CREATE");
-                    queries.Add($"    {(dbIndex.Unique ? "UNIQUE " : "")}INDEX \"{indexName}\"");
+                    queries.Add($"    {((dbIndex.Unique ?? false) ? "UNIQUE " : "")}INDEX \"{indexName}\"");
                     queries.Add("ON");
                     queries.Add($"    \"{tableName}\" ({string.Join(",", dbIndex.Columns.Select(c => "\"${c}\""))});");
                 }
@@ -578,7 +574,7 @@ namespace Dac.Net.Db
                     queries.Add($"DROP INDEX \"{indexName}\";");
 
                     queries.Add("CREATE");
-                    queries.Add($"    {(index.Unique ? "UNIQUE " : "")}INDEX \"{indexName}\"");
+                    queries.Add($"    {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX \"{indexName}\"");
                     queries.Add("ON");
                     queries.Add(
                         $"    \"{tableName}\" ({string.Join(",", index.Columns.Keys.Select(c => $"\"{c}\""))});");
@@ -623,12 +619,12 @@ namespace Dac.Net.Db
         /// 
         /// </summary>
         /// <param name="tables"></param>
+        /// <param name="db"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public async Task<DbDiff> Diff(Dictionary<string, DbTable> tables)
+        public async Task<DbDiff> Diff(Db db)
         {
             var orgDb = await Extract();
-            return orgDb.Diff(tables);
+            return orgDb.Diff(db);
         }
 
 
@@ -652,19 +648,19 @@ namespace Dac.Net.Db
                 var pk = new List<string>();
                 foreach (var (columnName, dbColumn) in dbTable.Columns)
                 {
-                    if (dbColumn.Id)
+                    if (dbColumn.Id ?? false)
                     {
                         dbColumn.NotNull = true;
                         dbColumn.Type = "serial";
                     }
 
-                    var notNull = dbColumn.NotNull ? " NOT NULL " : "";
+                    var notNull = (dbColumn.NotNull ?? false) ? " NOT NULL " : "";
                     var check = !string.IsNullOrWhiteSpace(dbColumn.Check) ? $" CHECK({dbColumn.Check}) " : "";
                     var def = !string.IsNullOrWhiteSpace(dbColumn.Default) ? $" DEFAULT {dbColumn.Default} " : "";
                     var type = dbColumn.Type + (dbColumn.Length > 0 ? $"({dbColumn.Length})" : "");
 
                     columnQuery.Add($"    {columnName} {type}{notNull}{check}{def}");
-                    if (dbColumn.Pk || dbColumn.Id)
+                    if ((dbColumn.Pk ?? false) || (dbColumn.Id ?? false))
                     {
                         pk.Add(columnName);
                     }
@@ -692,7 +688,7 @@ namespace Dac.Net.Db
                         indexColumns.Add(columnName);
                     }
 
-                    query.Add($"CREATE {(dbIndex.Unique ? "UNIQUE " : "")}INDEX {indexName} ON {tableName}(");
+                    query.Add($"CREATE {((dbIndex.Unique ?? false) ? "UNIQUE " : "")}INDEX {indexName} ON {tableName}(");
                     query.Add($"    {string.Join(",", indexColumns)}");
                     query.Add(");");
                 }

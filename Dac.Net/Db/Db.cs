@@ -3,6 +3,12 @@ using System.Linq;
 
 namespace Dac.Net.Db
 {
+    public class Db
+    {
+        public Dictionary<string, DbTable> Tables { get; set; } = new Dictionary<string, DbTable>();
+    }
+
+
     public class DbTable
     {
         public Dictionary<string, DbColumn> Columns { get; set; } = new Dictionary<string, DbColumn>();
@@ -14,10 +20,10 @@ namespace Dac.Net.Db
     {
         public string DisplayName { get; set; }
         public string Type { get; set; }
-        public int Length { get; set; }
-        public bool Pk { get; set; }
-        public bool Id { get; set; }
-        public bool NotNull { get; set; }
+        public int? Length { get; set; }
+        public bool? Pk { get; set; }
+        public bool? Id { get; set; }
+        public bool? NotNull { get; set; }
         public string Check { get; set; }
         public string CheckName { get; set; }
         public Dictionary<string, DbForeignKey> Fk { get; set; } = new Dictionary<string, DbForeignKey>();
@@ -31,7 +37,7 @@ namespace Dac.Net.Db
         public string Name { get; set; }
         public string Type { get; set; }
         public Dictionary<string, string> Columns { get; set; } = new Dictionary<string, string>();
-        public bool Unique { get; set; }
+        public bool? Unique { get; set; }
     }
 
     public class DbForeignKey

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Dac.Net.Class;
@@ -11,6 +12,7 @@ namespace Dac.Net
     {
         private IDb _db;
         private readonly AppArg _args;
+        public static Action<string> Output { get; set; }
         
         public Core(AppArg args)
         {
@@ -48,7 +50,7 @@ namespace Dac.Net
                         db = new Db.MySql();
                         break;
                     case Define.DbType.PgSql:
-                        db = new Db.PgSql()
+                        db = new PgSql()
                         {
                             Host = dbHost.Host,
                             Database = dbHost.Database,
@@ -60,7 +62,7 @@ namespace Dac.Net
                         
                         break;
                     case Define.DbType.MsSql:
-                        db = new Db.MsSql();
+                        db = new MsSql();
                         break;
                 }
 
@@ -79,6 +81,12 @@ namespace Dac.Net
                         break;
                     case Define.Command.ReCreate:
                         ReCreate(db);
+                        break;
+                    case Define.Command.Update:
+                        Update(db);
+                        break;
+                    case Define.Command.Diff:
+                        Diff(db);
                         break;
                 }
             }
@@ -99,11 +107,11 @@ namespace Dac.Net
         /// 
         /// </summary>
         /// <returns></returns>
-        private Dictionary<string, DbTable> ParseInputYaml()
+        private Db.Db ParseInputYaml()
         {
             var yaml = File.ReadAllText(_args.Input);
             var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
-            return deserializer.Deserialize<Dictionary<string, DbTable>>(yaml);
+            return deserializer.Deserialize<Db.Db>(yaml);
         }
 
 
@@ -114,27 +122,36 @@ namespace Dac.Net
 
         private async void Create(IDb db)
         {
-            var tables = ParseInputYaml();
-            await db.Create(tables, _args.Query);
+            try
+            {
+                await db.Create(ParseInputYaml(), _args.Query);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         /// <summary>
         /// 
         /// </summary>
-        private void ReCreate(IDb db)
+        private async void ReCreate(IDb db)
         {
-            var tables = ParseInputYaml();
-            db.ReCreate(tables, _args.Query);
+            var query = await db.ReCreate(ParseInputYaml(), _args.Query);
+            Console.WriteLine(query);
+            Output?.Invoke(query);
         }
 
-        private void Update()
+        private async void Update(IDb db)
         {
-            
+            var query = await db.Update(ParseInputYaml(), _args.Query, _args.DropTable);
+            Console.WriteLine(query);
+            Output?.Invoke(query);
         }
 
-        private void Diff()
+        private async void Diff(IDb db)
         {
-            
+            var diff = await db.Diff(ParseInputYaml());
         }
 
         private void Delete()

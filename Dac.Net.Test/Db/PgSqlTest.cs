@@ -17,64 +17,71 @@ namespace Dac.Net.Test.Db
             Database = "dac"
         };
 
-        private Dictionary<string, DbTable> _db = new Dictionary<string, DbTable>
+        private readonly Dac.Net.Db.Db _db = new Dac.Net.Db.Db()
         {
+            Tables = new Dictionary<string, DbTable>()
             {
-                "users", new DbTable()
                 {
-                    Columns = new Dictionary<string, DbColumn>()
+                    "users", new DbTable()
                     {
-                        {"id", new DbColumn() {Id = true}},
-                        {"name", new DbColumn() {Type = "varchar", Length = 100}},
-                        {"user_group_id", new DbColumn()
+                        Columns = new Dictionary<string, DbColumn>()
                         {
-                            Type = "int", 
-                            NotNull = true,
-                            Fk = new Dictionary<string, DbForeignKey>()
+                            {"id", new DbColumn() {Id = true}},
+                            {"name", new DbColumn() {Type = "varchar", Length = 100}},
                             {
-                                { "fk_users", new DbForeignKey()
+                                "user_group_id", new DbColumn()
                                 {
-                                    Table = "user_groups",
-                                    Column = "id"
-                                }}
+                                    Type = "int",
+                                    NotNull = true,
+                                    Fk = new Dictionary<string, DbForeignKey>()
+                                    {
+                                        {
+                                            "fk_users", new DbForeignKey()
+                                            {
+                                                Table = "user_groups",
+                                                Column = "id"
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        }}
-                    },
-                    Indices = new Dictionary<string, DbIndex>()
-                    {
+                        },
+                        Indices = new Dictionary<string, DbIndex>()
                         {
-                            "ix_users_name", new DbIndex()
                             {
-                                Columns = new Dictionary<string, string>
+                                "ix_users_name", new DbIndex()
                                 {
-                                    {"name", "asc"}
+                                    Columns = new Dictionary<string, string>
+                                    {
+                                        {"name", "asc"}
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            },
-            {
-                "user_groups", new DbTable()
+                },
                 {
-                    Columns = new Dictionary<string, DbColumn>()
+                    "user_groups", new DbTable()
                     {
+                        Columns = new Dictionary<string, DbColumn>()
                         {
-                            "id", new DbColumn()
                             {
-                                Id = true
-                            }
-                        },
-                        {"name", new DbColumn() {Type = "varchar", Length = 100}}
-                    },
-                    Indices = new Dictionary<string, DbIndex>()
-                    {
-                        {
-                            "ix_user_groups_name", new DbIndex()
-                            {
-                                Columns = new Dictionary<string, string>
+                                "id", new DbColumn()
                                 {
-                                    {"name", "asc"}
+                                    Id = true
+                                }
+                            },
+                            {"name", new DbColumn() {Type = "varchar", Length = 100}}
+                        },
+                        Indices = new Dictionary<string, DbIndex>()
+                        {
+                            {
+                                "ix_user_groups_name", new DbIndex()
+                                {
+                                    Columns = new Dictionary<string, string>
+                                    {
+                                        {"name", "asc"}
+                                    }
                                 }
                             }
                         }
@@ -101,14 +108,14 @@ namespace Dac.Net.Test.Db
             Assert.True(!string.IsNullOrWhiteSpace(query));
             _output.WriteLine(query);
         }
-        
+
         [Fact]
         public async void ExtractTest()
         {
-            var tables = await _pg.Extract();
-            Assert.NotEmpty(tables);
+            var db = await _pg.Extract();
+            Assert.NotEmpty(db.Tables);
         }
-        
+
         [Fact]
         public async void ReCreateTest()
         {
@@ -116,14 +123,14 @@ namespace Dac.Net.Test.Db
             Assert.True(!string.IsNullOrWhiteSpace(query));
             _output.WriteLine(query);
         }
-        
+
         [Fact]
         public async void DiffTest()
         {
             var diff = await _pg.Diff(_db);
             Assert.False(diff.HasDiff);
         }
-        
+
         [Fact]
         public async void UpdateTest()
         {

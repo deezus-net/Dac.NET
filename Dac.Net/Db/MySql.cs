@@ -29,37 +29,38 @@ namespace Dac.Net.Db
             await _connection.OpenAsync();
         }
 
-        public Task<string> Drop(Dictionary<string, DbTable> tables, bool queryOnly)
+
+        public Task<string> Drop(Db db, bool queryOnly)
         {
             throw new System.NotImplementedException();
         }
 
-        public Task<Dictionary<string, DbTable>> Extract()
+        public Task<Db> Extract()
         {
             throw new System.NotImplementedException();
         }
 
-        public string Query(Dictionary<string, DbTable> tables)
+        public string Query(Db db)
         {
             throw new System.NotImplementedException();
         }
 
-        public Task<string> Create(Dictionary<string, DbTable> tables, bool queryOnly)
+        public Task<string> Create(Db db, bool queryOnly)
         {
             throw new System.NotImplementedException();
         }
 
-        public Task<string> ReCreate(Dictionary<string, DbTable> tables, bool queryOnly)
+        public Task<string> ReCreate(Db db, bool queryOnly)
         {
             throw new System.NotImplementedException();
         }
 
-        public Task<string> Update(Dictionary<string, DbTable> tables, bool queryOnly, bool dropTable)
+        public Task<string> Update(Db db, bool queryOnly, bool dropTable)
         {
             throw new System.NotImplementedException();
         }
 
-        public Task<DbDiff> Diff(Dictionary<string, DbTable> tables)
+        public Task<DbDiff> Diff(Db db)
         {
             throw new System.NotImplementedException();
         }

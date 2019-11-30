@@ -5,78 +5,154 @@ namespace Dac.Net.Db
 {
     public static class DbUtility
     {
-        public static DbDiff Diff(this Dictionary<string, DbTable> org, Dictionary<string, DbTable> target)
+        public static void TrimDbProperties(this Db db)
+        {
+
+            foreach (var (tableName, dbTable) in db.Tables)
+            {
+
+                foreach (var (columnName, dbColumn) in dbTable.Columns)
+                {
+                    if (dbColumn.Id ?? false)
+                    {
+                        dbColumn.Type = null;
+                        dbColumn.NotNull = null;
+                        dbColumn.Pk = null;
+                        dbColumn.Length = null;
+                    }
+                    else
+                    {
+                        dbColumn.Id = null;
+                    }
+
+                    if (!(dbColumn.Pk ?? false))
+                    {
+                        dbColumn.Pk = null;
+                    }
+                    else
+                    {
+                        dbColumn.NotNull = true;
+                    }
+
+                    if (!(dbColumn.NotNull ?? false))
+                    {
+                        dbColumn.NotNull = null;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(dbColumn.Default))
+                    {
+                        dbColumn.Default = null;
+                    }
+
+                    if ((dbColumn.Length ?? 0) == 0)
+                    {
+                        dbColumn.Length = null;
+                    }
+
+                    foreach (var (fkName, dbForeignKey) in dbColumn.Fk)
+                    {
+                        if (string.IsNullOrWhiteSpace(dbForeignKey.Update))
+                        {
+                            dbForeignKey.Update = null;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(dbForeignKey.Delete))
+                        {
+                            dbForeignKey.Delete = null;
+                        }
+                    }
+
+                }
+
+                foreach (var (indexName, dbIndex) in dbTable.Indices)
+                {
+                    if (!(dbIndex.Unique ?? false))
+                    {
+                        dbIndex.Unique = null;
+                    }
+
+                    foreach (var (indexColumnName, direction) in dbIndex.Columns)
+                    {
+                        dbIndex.Columns[indexColumnName] = (direction ?? "").ToLower();
+                    }
+                }
+
+            }
+
+        }
+
+
+        public static DbDiff Diff(this Db org, Db target)
         {
             var result = new DbDiff
             {
-
-                CurrentTables = org,
-                NewTables = target
+                CurrentTables = org.Tables,
+                NewTables = target.Tables
             };
 
             // tables
 
-            foreach (var tableName in org.Keys.Concat(target.Keys).Distinct())
+            foreach (var tableName in org.Tables.Keys.Concat(target.Tables.Keys).Distinct())
             {
-                if (!target.ContainsKey(tableName))
+                if (!target.Tables.ContainsKey(tableName))
                 {
                     result.DeletedTableNames.Add(tableName);
 
                 }
-                else if (!org.ContainsKey(tableName))
+                else if (!org.Tables.ContainsKey(tableName))
                 {
-                    result.AddedTables[tableName] = target[tableName];
+                    result.AddedTables[tableName] = target.Tables[tableName];
 
                 }
                 else
                 {
                     // columns
 
-                    foreach (var columnName in org[tableName].Columns.Keys.Concat(target[tableName].Columns.Keys)
+                    foreach (var columnName in org.Tables[tableName].Columns.Keys.Concat(target.Tables[tableName].Columns.Keys)
                         .Distinct())
                     {
-                        if (!target[tableName].Columns.ContainsKey(columnName))
+                        if (!target.Tables[tableName].Columns.ContainsKey(columnName))
                         {
                             InitModifiedTable(result, tableName);
                             result.ModifiedTables[tableName].DeletedColumnName.Add(columnName);
 
                         }
-                        else if (!org[tableName].Columns.ContainsKey(columnName))
+                        else if (!org.Tables[tableName].Columns.ContainsKey(columnName))
                         {
                             InitModifiedTable(result, tableName);
-                            result.ModifiedTables[tableName].AddedColumns.Add(columnName, target[tableName].Columns[columnName]);
+                            result.ModifiedTables[tableName].AddedColumns.Add(columnName, target.Tables[tableName].Columns[columnName]);
 
                         }
-                        else if (!org[tableName].Columns[columnName].Equal(target[tableName].Columns[columnName]))
+                        else if (!org.Tables[tableName].Columns[columnName].Equal(target.Tables[tableName].Columns[columnName]))
                         {
                             InitModifiedTable(result, tableName);
                             result.ModifiedTables[tableName].ModifiedColumns.Add(columnName, new[]
                             {
-                                org[tableName].Columns[columnName],
-                                target[tableName].Columns[columnName]
+                                org.Tables[tableName].Columns[columnName],
+                                target.Tables[tableName].Columns[columnName]
                             });
                         }
                     }
 
                     // indexes
-                    foreach (var indexName in org[tableName].Indices.Keys.Concat(target[tableName].Indices.Keys).Distinct()) {
+                    foreach (var indexName in org.Tables[tableName].Indices.Keys.Concat(target.Tables[tableName].Indices.Keys).Distinct()) {
                         
                         
                         
-                        if (!target[tableName].Indices.ContainsKey(indexName)) {
+                        if (!target.Tables[tableName].Indices.ContainsKey(indexName)) {
                             InitModifiedTable(result, tableName);
                             result.ModifiedTables[tableName].DeletedIndexNames.Add(indexName);
 
-                        } else if (!org[tableName].Indices.ContainsKey(indexName)) {
+                        } else if (!org.Tables[tableName].Indices.ContainsKey(indexName)) {
                             InitModifiedTable(result, tableName);
-                            result.ModifiedTables[tableName].AddedIndices.Add(indexName, target[tableName].Indices[indexName]);
+                            result.ModifiedTables[tableName].AddedIndices.Add(indexName, target.Tables[tableName].Indices[indexName]);
 
-                        } else if (!target[tableName].Indices[indexName].Equal(org[tableName].Indices[indexName])) {
+                        } else if (!target.Tables[tableName].Indices[indexName].Equal(org.Tables[tableName].Indices[indexName])) {
                             InitModifiedTable(result, tableName);
                             result.ModifiedTables[tableName].ModifiedIndices.Add(indexName, new[]
                                 {
-                                    org[tableName].Indices[indexName],
-                                    target[tableName].Indices[indexName]
+                                    org.Tables[tableName].Indices[indexName],
+                                    target.Tables[tableName].Indices[indexName]
                                 }
                             );
 
@@ -108,8 +184,8 @@ namespace Dac.Net.Db
                     break;
                 }
 
-                if ((org.Fk[fkName].Update == target.Fk[fkName].Update) &&
-                    (org.Fk[fkName].Delete == target.Fk[fkName].Delete) &&
+                if ((org.Fk[fkName].Update ?? "") == (target.Fk[fkName].Update ?? "") &&
+                    (org.Fk[fkName].Delete ?? "") == (target.Fk[fkName].Delete ?? "") &&
                     (org.Fk[fkName].Table == target.Fk[fkName].Table) &&
                     (org.Fk[fkName].Column == target.Fk[fkName].Column))
                 {
