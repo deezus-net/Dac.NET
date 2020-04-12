@@ -16,5 +16,14 @@ namespace Dac.Net.Db
         public string Default { get; set; }
         public string DefaultName { get; set; }
         public string Comment { get; set; }
+
+        public int LengthInt
+        {
+            get
+            {
+                int.TryParse(Length, out var length);
+                return length;
+            }
+        }
     }
 }
