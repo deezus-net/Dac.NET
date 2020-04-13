@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Channels;
+using Dac.Net.Core;
 using Microsoft.Data.SqlClient;
 
 namespace Dac.Net.Db
@@ -25,7 +27,290 @@ namespace Dac.Net.Db
 
         public DataBase Extract()
         {
-            throw new System.NotImplementedException();
+            var tables = new Dictionary<string, Table>();
+
+            var columns = new Dictionary<string, Dictionary<string, Column>>();
+            var indices = new Dictionary<string, Dictionary<string, Index>>();
+            var pk = new Dictionary<string, List<string>>();
+
+            var query = @"
+                SELECT
+                    t.name AS table_name,
+                    i.name AS index_name,
+                    col.name AS column_name,
+                    i.is_primary_key,
+                    c.is_descending_key,
+                    i.is_unique
+                FROM
+                    sys.indexes as i 
+                INNER JOIN
+                    sys.tables as t
+                ON
+                    i.object_id = t.object_id 
+                INNER JOIN
+                    sys.index_columns AS c
+                ON
+                    i.object_id = c.object_id 
+                AND
+                    i.index_id = c.index_id
+                INNER JOIN
+                    sys.columns as col
+                ON
+                    c.object_id = col.object_id
+                AND
+                    c.column_id = col.column_id
+                ORDER BY t.name, i.name, c.key_ordinal
+        ";
+
+            foreach (DataRow row in GetResult(query).Rows)
+            {
+                var tableName = row.Field<string>("table_name");
+
+                if (!pk.ContainsKey(tableName))
+                {
+                    pk.Add(tableName, new List<string>());
+                }
+
+                if (!indices.ContainsKey(tableName))
+                {
+                    indices.Add(tableName, new Dictionary<string, Index>());
+                }
+
+                if (row.Field<bool>("is_primary_key"))
+                {
+                    pk[tableName].Add(row.Field<string>("column_name"));
+
+                }
+                else
+                {
+                    var indexName = row.Field<string>("index_name");
+                    if (!indices[tableName].ContainsKey(indexName))
+                    {
+                        indices[tableName].Add(indexName, new Index() {Unique = row.Field<bool>("is_unique")});
+                    }
+
+                    indices[tableName][indexName].Columns[row.Field<string>("column_name")] =
+                        row.Field<bool>("is_descending_key") ? "desc" : "asc";
+                }
+            }
+
+            query = @"
+            SELECT
+                t.name AS table_name,
+                c.name AS column_name,
+                type.name AS type,
+                c.max_length,
+                c.is_nullable ,
+                c.is_identity
+            FROM
+                sys.tables AS t 
+            INNER JOIN
+                sys.columns AS c 
+            ON
+                c.object_id = t.object_id 
+            INNER JOIN 
+                sys.types as type 
+            ON 
+                c.system_type_id = type.system_type_id 
+            AND
+                c.user_type_id = type.user_type_id 
+            ORDER BY t.name, c.object_id
+        ";
+
+            // get column list
+            foreach (DataRow row in GetResult(query).Rows)
+            {
+                var tableName = row.Field<string>("table_name");
+                if (!columns.ContainsKey(tableName))
+                {
+                    columns.Add(tableName, new Dictionary<string, Column>());
+                }
+
+                var length = row.Field<short>("max_length");
+                var type = row.Field<string>("type");
+                switch (type)
+                {
+                    case "nvarchar":
+                    case "nchar":
+                        length /= 2;
+                        break;
+                    case "int":
+                    case "datetime":
+                        length = 0;
+                        break;
+                }
+
+                columns[tableName].Add(
+                    row.Field<string>("column_name"),
+                    new Column()
+                    {
+                        Id = row.Field<bool>("is_identity"),
+                        Type = row.Field<string>("type"),
+                        Length = Convert.ToString(length),
+                        NotNull = !row.Field<bool>("is_nullable"),
+                        Pk = pk.ContainsKey(tableName) && pk[tableName].Contains(row.Field<string>("column_name"))
+                    }
+                );
+            }
+
+            foreach (var tableName in columns.Keys)
+            {
+                tables.Add(tableName, new Table()
+                {
+                    Columns = columns[tableName],
+                    Indices = indices[tableName]
+                });
+            }
+
+            foreach (var tableName in tables.Keys)
+            {
+                // get check list
+                query = @"
+                SELECT
+                    t.name AS table_name, 
+                    col.name AS column_name,
+                    ch.definition,
+                    ch.name
+                FROM
+                    sys.check_constraints AS ch 
+                INNER JOIN
+                    sys.tables AS t 
+                ON
+                    ch.parent_object_id = t.object_id 
+                INNER JOIN
+                    sys.columns AS col 
+                ON
+                    ch.parent_column_id = col.column_id 
+                AND
+                    t.object_id = col.object_id 
+                WHERE
+                    t.name = @table
+            ";
+                foreach (DataRow row in GetResult(query, null, new SqlParameter("table", tableName)).Rows)
+                {
+
+                    var columnName = row.Field<string>("column_name");
+                    var definition = row.Field<string>("definition");
+                    var m = Regex.Match(definition, @"\((.*)\)");
+                    if (m.Success)
+                    {
+                        definition = m.Groups[1].Value;
+                    }
+
+
+                    if (tables[tableName].Columns.ContainsKey(columnName))
+                    {
+                        tables[tableName].Columns[columnName].Check = definition;
+                        tables[tableName].Columns[columnName].CheckName = row.Field<string>("name");
+                    }
+                }
+
+                // get default list
+                query = @"
+                SELECT
+                    t.name AS table_name, 
+                    col.name AS column_name,
+                    d.definition,
+                    d.name
+                FROM
+                    sys.default_constraints AS d 
+                INNER JOIN
+                    sys.tables AS t 
+                ON
+                    d.parent_object_id = t.object_id 
+                INNER JOIN
+                    sys.columns AS col 
+                ON
+                    d.parent_column_id = col.column_id 
+                AND
+                    t.object_id = col.object_id 
+                WHERE
+                    t.name = @table
+            ";
+                foreach (DataRow row in GetResult(query, null, new SqlParameter("table", tableName)).Rows)
+                {
+
+                    var columnName = row.Field<string>("column_name");
+
+                    var definition = row.Field<string>("definition");
+                    var m = Regex.Match(definition, @"\((.*)\)");
+                    if (m.Success)
+                    {
+                        definition = m.Groups[1].Value;
+                    }
+
+
+                    if (tables[tableName].Columns.ContainsKey(columnName))
+                    {
+                        tables[tableName].Columns[columnName].Default = definition;
+                        tables[tableName].Columns[columnName].DefaultName = row.Field<string>("name");
+                    }
+                }
+
+                // get foreign key list
+                query = @"
+                SELECT
+                    fk.name AS fk_name,
+                    t1.name AS table_name,
+                    c1.name AS column_name,
+                    t2.name AS foreign_table,
+                    c2.name AS foreign_column,
+                    fk.update_referential_action_desc AS onupdate,
+                    fk.delete_referential_action_desc AS ondelete 
+                FROM
+                    sys.foreign_key_columns AS fkc 
+                INNER JOIN
+                    sys.tables AS t1 
+                ON
+                    fkc.parent_object_id = t1.object_id 
+                INNER JOIN
+                    sys.columns AS c1 
+                ON
+                    c1.object_id = t1.object_id 
+                AND
+                    fkc.parent_column_id = c1.column_id 
+                INNER JOIN
+                    sys.tables AS t2 
+                ON
+                    fkc.referenced_object_id = t2.object_id 
+                INNER JOIN
+                    sys.columns AS c2 
+                ON
+                    c2.object_id = t2.object_id 
+                AND
+                    fkc.referenced_column_id = c2.column_id 
+                INNER JOIN
+                    sys.foreign_keys AS fk 
+                ON
+                    fkc.constraint_object_id = fk.object_id 
+                WHERE
+                    t1.name = @table
+            ";
+                foreach (DataRow row in GetResult(query, null, new SqlParameter("table", tableName)).Rows)
+                {
+
+                    var columnName = row.Field<string>("column_name");
+                    if (tables[tableName].Columns.ContainsKey(columnName))
+                    {
+                        tables[tableName].Columns[columnName].ForeignKeys.Add(row.Field<string>("fk_name"),
+                            new ForeignKey()
+                            {
+
+                                Table = row.Field<string>("foreign_table"),
+                                Column = row.Field<string>("foreign_column"),
+                                Update = row.Field<string>("onupdate"),
+                                Delete = row.Field<string>("ondelete")
+                            }
+                        );
+                    }
+                }
+
+
+            }
+
+            var db = new DataBase() {Tables = tables};
+            Utility.TrimDataBaseProperties(db);
+            return db;
         }
 
         public string Query(DataBase db)
@@ -252,7 +537,7 @@ namespace Dac.Net.Db
                 foreach (var (indexName, index) in table.Indices)
                 {
                     var name = !string.IsNullOrWhiteSpace(indexName) ? indexName : $"INDEX_{tableName}_${num++}";
-                    query.AppendLine($"CREATE {(index.Unique ? "UNIQUE " : "")}INDEX [{name}] ON [dbo].[{tableName}](");
+                    query.AppendLine($"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX [{name}] ON [dbo].[{tableName}](");
                     query.AppendLine(
                         $"    {string.Join(",", index.Columns.Keys.Select(c => $"[{c}] {index.Columns[c]}"))}");
                     query.AppendLine(");");
@@ -317,12 +602,17 @@ namespace Dac.Net.Db
         /// <param name="query"></param>
         /// <param name="trn"></param>
         /// <returns></returns>
-        private DataTable GetResult(string query, SqlTransaction trn = null)
+        private DataTable GetResult(string query, SqlTransaction trn = null, params SqlParameter[] parameters)
         {
             var res = new DataTable();
             using (var cmd = trn == null ? _sqlConnection.CreateCommand() : new SqlCommand("", trn.Connection, trn))
             {
                 cmd.CommandText = query;
+                if (parameters.Any())
+                {
+                    cmd.Parameters.AddRange(parameters);
+                }
+
                 using (var da = new SqlDataAdapter(cmd))
                 {
                     da.Fill(res);

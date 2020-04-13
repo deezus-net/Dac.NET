@@ -7,6 +7,6 @@ namespace Dac.Net.Db
         public string Name { get; set; }
         public string Type { get; set; }
         public Dictionary<string, string> Columns = new Dictionary<string, string>();
-        public bool Unique { get; set; }
+        public bool? Unique { get; set; }
     }
 }

@@ -25,6 +25,19 @@ namespace Dac.Net.Test.Db
         }
         
         [Fact]
+        public void ExtractTest()
+        {
+            var server = Utility.LoadServers("TestData/servers.yml")["mssql"];
+            var sql = new MsSql(server);
+            var res = sql.Connect();
+            var db = sql.Extract();
+            var yaml = Utility.DataBaseToYaml(db);
+            _output.WriteLine(yaml);
+            Assert.NotEmpty(db.Tables);
+        }
+        
+        
+        [Fact]
         public void CreateTest()
         {
             var server = Utility.LoadServers("TestData/servers.yml")["mssql"];
