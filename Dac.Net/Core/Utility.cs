@@ -145,6 +145,7 @@ namespace Dac.Net.Core
 
         public static string DataBaseToYaml(DataBase db)
         {
+            TrimDataBaseProperties(db);
             var sb = new StringBuilder();
             using (var tw = new StringWriter(sb))
             {

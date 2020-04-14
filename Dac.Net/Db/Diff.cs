@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Dac.Net.Core;
 
 namespace Dac.Net.Db
 {
@@ -29,6 +30,8 @@ namespace Dac.Net.Db
 
         public void Check()
         {
+            Utility.TrimDataBaseProperties(CurrentDb);
+            Utility.TrimDataBaseProperties(NewDb);
 
             // tables
             var tableNames = CurrentDb.Tables.Keys.Concat(NewDb.Tables.Keys).Distinct();
@@ -61,7 +64,7 @@ namespace Dac.Net.Db
                         else if (!CurrentDb.Tables[tableName].Columns.ContainsKey(columnName))
                         {
                             InitModifiedTable(tableName);
-                            ModifiedTables[tableName].AddedColumns.Add(NewDb.Tables[tableName].Columns[columnName]);
+                            ModifiedTables[tableName].AddedColumns.Add(columnName, NewDb.Tables[tableName].Columns[columnName]);
 
                         }
                         else if (!CurrentDb.Tables[tableName].Columns[columnName]
@@ -91,7 +94,7 @@ namespace Dac.Net.Db
                         else if (!CurrentDb.Tables[tableName].Indices.ContainsKey(indexName))
                         {
                             InitModifiedTable(tableName);
-                            ModifiedTables[tableName].AddedIndices.Add(NewDb.Tables[tableName].Indices[indexName]);
+                            ModifiedTables[tableName].AddedIndices.Add(indexName, NewDb.Tables[tableName].Indices[indexName]);
 
                         }
                         else if (!NewDb.Tables[tableName].Indices[indexName]
@@ -125,10 +128,10 @@ namespace Dac.Net.Db
 
     public class ModifiedTable
     {
-        public List<Column> AddedColumns { get; set; } = new List<Column>();
+        public Dictionary<string, Column> AddedColumns { get; set; } = new Dictionary<string, Column>();
         public Dictionary<string, Column[]> ModifiedColumns { get; set; } = new Dictionary<string, Column[]>();
         public List<string> DeletedColumnName { get; set; } = new List<string>();
-        public List<Index> AddedIndices { get; set; } = new List<Index>();
+        public Dictionary<string, Index> AddedIndices { get; set; } = new Dictionary<string, Index>();
         public Dictionary<string, Index[]> ModifiedIndices { get; set; } = new Dictionary<string, Index[]>();
         public List<string> DeletedIndexNames { get; set; } = new List<string>();
     }

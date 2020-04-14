@@ -25,6 +25,10 @@ namespace Dac.Net.Db
             throw new System.NotImplementedException();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public DataBase Extract()
         {
             var tables = new Dictionary<string, Table>();
@@ -309,15 +313,27 @@ namespace Dac.Net.Db
             }
 
             var db = new DataBase() {Tables = tables};
-            Utility.TrimDataBaseProperties(db);
+          //  Utility.TrimDataBaseProperties(db);
             return db;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         public string Query(DataBase db)
         {
             throw new System.NotImplementedException();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="queryOnly"></param>
+        /// <returns></returns>
         public string Create(DataBase db, bool queryOnly)
         {
             var queries = new StringBuilder();
@@ -338,6 +354,12 @@ namespace Dac.Net.Db
             return query;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="queryOnly"></param>
+        /// <returns></returns>
         public string ReCreate(DataBase db, bool queryOnly)
         {
             var queries = new StringBuilder();
@@ -412,14 +434,274 @@ namespace Dac.Net.Db
             return result;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="queryOnly"></param>
+        /// <param name="dropTable"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         public string Update(DataBase db, bool queryOnly, bool dropTable)
         {
-            throw new System.NotImplementedException();
+            var diff = Diff(db);
+            var query = new StringBuilder();
+            var createFkQuery = new List<string>();
+            var dropFkQuery = new List<string>();
+
+            var droppedIndexNames = new List<string>();
+
+            // add tables
+            if (diff.AddedTables.Any())
+            {
+                query.AppendLine(CreateQuery(new DataBase() {Tables = diff.AddedTables}));
+            }
+
+            foreach (var (tableName, table) in diff.ModifiedTables)
+            {
+                var orgTable = diff.CurrentDb.Tables[tableName];
+
+                // add columns
+                foreach (var (columnName, column) in table.AddedColumns)
+                {
+                    var type = (column.Id ?? false) ? "int" : column.Type;
+                    if (column.LengthInt > 0)
+                    {
+                        type += $"({column.Length})";
+                    }
+
+                    var check = !string.IsNullOrWhiteSpace(column.Check) ? $" CHECK({column.Check}) " : "";
+                    var def = !string.IsNullOrWhiteSpace(column.Default) ? $" DEFAULT {column.Default} " : "";
+
+                    query.AppendLine("ALTER TABLE");
+                    query.AppendLine($"    [{tableName}]");
+                    query.AppendLine("ADD");
+                    query.AppendLine(
+                        $"`    [{columnName}] {type}{((column.Id ?? false) ? " IDENTITY" : "")}{((column.NotNull ?? false) ? " NOT NULL" : "")}{def}{check};");
+
+                    foreach (var (fkName, fk) in column.ForeignKeys)
+                    {
+                        createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
+                            fk.Update, fk.Delete));
+                    }
+                }
+
+                // modify columns
+                foreach (var (columnName, columns) in table.ModifiedColumns)
+                {
+                    var orgColumn = columns[0];
+                    var newColumn = columns[1];
+
+                    // if change execute alter
+                    foreach (var (indexName, index ) in orgTable.Indices.Where(x =>
+                        x.Value.Columns.ContainsKey(columnName))
+                    )
+                    {
+                        if (!droppedIndexNames.Contains(indexName))
+                        {
+                            query.AppendLine($"DROP INDEX [{indexName}] ON [{tableName}];");
+
+                            droppedIndexNames.Add(indexName);
+                        }
+                    }
+
+
+                    var type = (newColumn.Id ?? false) ? "int" : newColumn.Type;
+                    if (newColumn.LengthInt > 0)
+                    {
+                        type += $"({newColumn.Length})";
+                    }
+
+                    var check = !string.IsNullOrWhiteSpace(newColumn.Check) ? $" CHECK({newColumn.Check}) " : "";
+                    var def = !string.IsNullOrWhiteSpace(newColumn.Default) ? $" DEFAULT {newColumn.Default} " : "";
+
+                    query.AppendLine("ALTER TABLE");
+                    query.AppendLine("    [${tableName}]");
+                    query.AppendLine("ALTER COLUMN");
+                    query.AppendLine(
+                        $"    [{columnName}] {type}{((newColumn.Id ?? false) ? " IDENTITY" : "")}{((newColumn.NotNull ?? false) ? " NOT NULL" : "")};");
+
+                    if (orgColumn.Default != newColumn.Default)
+                    {
+                        if (!string.IsNullOrWhiteSpace(orgColumn.DefaultName))
+                        {
+                            query.AppendLine("ALTER TABLE");
+                            query.AppendLine($"    [{tableName}]");
+                            query.AppendLine("DROP CONSTRAINT");
+                            query.AppendLine($"    [{orgColumn.DefaultName}];");
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(newColumn.Default))
+                        {
+                            query.AppendLine("ALTER TABLE");
+                            query.AppendLine($"    [{tableName}]");
+                            query.AppendLine($"ADD DEFAULT {newColumn.Default} FOR [${columnName}];");
+                        }
+                    }
+
+                    if (orgColumn.Check != newColumn.Check)
+                    {
+                        // drop old check
+                        if (!string.IsNullOrWhiteSpace(orgColumn.CheckName))
+                        {
+                            query.AppendLine("ALTER TABLE");
+                            query.AppendLine($"    [{tableName}]");
+                            query.AppendLine("DROP CONSTRAINT");
+                            query.AppendLine($"    [{orgColumn.CheckName}];");
+                        }
+
+                        // add new check
+                        if (!string.IsNullOrWhiteSpace(newColumn.Check))
+                        {
+                            query.AppendLine("ALTER TABLE");
+                            query.AppendLine($"    [{tableName}]");
+                            query.AppendLine($"ADD CHECK({newColumn.Check});");
+                        }
+                    }
+
+                    // foreign key
+                    var orgFkName = orgColumn.ForeignKeys.Keys;
+                    var newFkName = newColumn.ForeignKeys.Keys;
+
+                    foreach (var fkName in orgFkName.Concat(newFkName).Distinct())
+                    {
+                        if (!orgFkName.Contains(fkName))
+                        {
+                            var fk = newColumn.ForeignKeys[fkName];
+                            createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
+                                fk.Update, fk.Delete));
+                            continue;
+                        }
+
+                        if (!newFkName.Contains(fkName))
+                        {
+
+                            dropFkQuery.Add("ALTER TABLE");
+                            dropFkQuery.Add($"    [dbo].[{tableName}]");
+                            dropFkQuery.Add($"DROP CONSTRAINT [{fkName}];");
+                            continue;
+                        }
+
+                        if ((orgColumn.ForeignKeys[fkName].Update != newColumn.ForeignKeys[fkName].Update) ||
+                            (orgColumn.ForeignKeys[fkName].Delete != newColumn.ForeignKeys[fkName].Delete) ||
+                            (orgColumn.ForeignKeys[fkName].Table != newColumn.ForeignKeys[fkName].Table) ||
+                            (orgColumn.ForeignKeys[fkName].Column != newColumn.ForeignKeys[fkName].Column))
+                        {
+
+                            dropFkQuery.Add("ALTER TABLE");
+                            dropFkQuery.Add($"    [dbo].[{tableName}]");
+                            dropFkQuery.Add($"DROP CONSTRAINT [{fkName}];");
+
+                            var fk = newColumn.ForeignKeys[fkName];
+                            createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
+                                fk.Update, fk.Delete));
+                        }
+                    }
+                }
+
+                // drop columns
+                foreach (var columnName in table.DeletedColumnName)
+                {
+                    if (!string.IsNullOrWhiteSpace(diff.CurrentDb.Tables[tableName].Columns[columnName].DefaultName))
+                    {
+                        query.AppendLine("ALTER TABLE");
+                        query.AppendLine($"    [{tableName}]");
+                        query.AppendLine(
+                            $"DROP CONSTRAINT [{diff.CurrentDb.Tables[tableName].Columns[columnName].DefaultName}];");
+                    }
+
+                    query.AppendLine("ALTER TABLE");
+                    query.AppendLine($"    [{tableName}]");
+                    query.AppendLine($"DROP COLUMN [{columnName}];");
+
+                }
+
+                // create index
+                foreach (var (indexName, index) in table.AddedIndices)
+                {
+                    query.AppendLine("CREATE");
+                    query.AppendLine($"    {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX [{indexName}]");
+                    query.AppendLine("ON");
+                    query.AppendLine(
+                        $"    [dbo].[{tableName}](${string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});");
+                }
+
+                // modify index
+                foreach (var (indexName, indices) in table.ModifiedIndices)
+                {
+                    var index = indices[1];
+                    if (!droppedIndexNames.Contains(indexName))
+                    {
+                        query.AppendLine("DROP INDEX");
+                        query.AppendLine($"    [{tableName}].[{indexName}];");
+                    }
+
+                    query.AppendLine("CREATE");
+                    query.AppendLine($"    {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX [{indexName}]");
+                    query.AppendLine("ON");
+                    query.AppendLine(
+                        $"    [dbo].[{tableName}](${string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});");
+                }
+
+                // drop index
+                foreach (var indexName in table.DeletedIndexNames)
+                {
+                    if (!droppedIndexNames.Contains(indexName))
+                    {
+                        query.AppendLine($"DROP INDEX [{tableName}].[{indexName}];");
+                    }
+                }
+
+            }
+
+            // drop tables
+            if (dropTable)
+            {
+                foreach (var tableName in diff.DeletedTableNames)
+                {
+                    query.AppendLine($"DROP TABLE [dbo].[{tableName}];");
+                }
+            }
+
+            var result = string.Join("\n", dropFkQuery) + "\n" + query.ToString() + "\n" +
+                         string.Join("\n", createFkQuery);
+
+            if (query.Length == 0 && !createFkQuery.Any() && !dropFkQuery.Any())
+            {
+                return null;
+            }
+
+            if (queryOnly)
+            {
+                return result;
+            }
+
+            using (var trn = _sqlConnection.BeginTransaction())
+            {
+                using (var cmd = new SqlCommand("", trn.Connection, trn))
+                {
+                    cmd.CommandText = result;
+                    cmd.ExecuteNonQuery();
+                }
+
+                trn.Commit();
+            }
+
+            return result;
+
+
+
+
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <returns></returns>
         public Diff Diff(DataBase db)
         {
-            return new Diff(Extract(), db);
+            return new Diff(Extract(),   db);
         }
 
         /// <summary>

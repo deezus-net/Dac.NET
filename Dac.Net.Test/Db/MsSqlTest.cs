@@ -62,5 +62,30 @@ namespace Dac.Net.Test.Db
             _output.WriteLine(query);
             Assert.False(string.IsNullOrWhiteSpace(query));
         }
+        
+        [Fact]
+        public void DiffTest()
+        {
+            var server = Utility.LoadServers("TestData/servers.yml")["mssql"];
+            var db = Utility.LoadDataBase("TestData/mssql.yml");
+
+            var sql = new MsSql(server);
+            var res = sql.Connect();
+            var diff = sql.Diff(db);
+            Assert.False(diff.HasDiff);
+        }
+        
+        [Fact]
+        public void UpdateTest()
+        {
+            var server = Utility.LoadServers("TestData/servers.yml")["mssql"];
+            var db = Utility.LoadDataBase("TestData/mssql.yml");
+
+            var sql = new MsSql(server);
+            var res = sql.Connect();
+            var query = sql.Update(db, true, false);
+            _output.WriteLine(query);
+            Assert.False(string.IsNullOrWhiteSpace(query));
+        }
     }
 }

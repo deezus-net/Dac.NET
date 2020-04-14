@@ -211,13 +211,13 @@ namespace Dac.Net.Test.Db
                                     }
                                 }
                             },
-                            Indices = new Dictionary<string, Index>()
+                            /*Indices = new Dictionary<string, Index>()
                             {
                                 { "ix_name", new Index()
                                 {
                                     Columns = new Dictionary<string, string>(){ {"name", "asc" }}
                                 }}
-                            }
+                            }*/
                         }
                     }
                 }
