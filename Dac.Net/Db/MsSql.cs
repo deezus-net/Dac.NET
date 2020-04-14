@@ -419,7 +419,7 @@ namespace Dac.Net.Db
 
         public Diff Diff(DataBase db)
         {
-            throw new System.NotImplementedException();
+            return new Diff(Extract(), db);
         }
 
         /// <summary>
