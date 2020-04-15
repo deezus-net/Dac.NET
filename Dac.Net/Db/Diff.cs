@@ -30,9 +30,6 @@ namespace Dac.Net.Db
 
         public void Check()
         {
-            Utility.TrimDataBaseProperties(CurrentDb);
-            Utility.TrimDataBaseProperties(NewDb);
-
             // tables
             var tableNames = CurrentDb.Tables.Keys.Concat(NewDb.Tables.Keys).Distinct();
 

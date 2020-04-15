@@ -75,7 +75,7 @@ namespace Dac.Net.Core
                         column.Id = null;
                     }
 
-                    if (!column.Pk ?? false)
+                    if (!(column.Pk ?? false))
                     {
                         column.Pk = null;
                     }
@@ -129,7 +129,7 @@ namespace Dac.Net.Core
                     var indexColumns = new Dictionary<string, string>();
                     foreach (var (indexColumnName, direction) in index.Columns)
                     {
-                        indexColumns.Add(indexName, (direction ?? "").ToLower());
+                        indexColumns.Add(indexColumnName, (direction ?? "").ToLower());
                     }
 
                     index.Columns = indexColumns;

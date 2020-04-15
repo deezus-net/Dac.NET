@@ -313,7 +313,7 @@ namespace Dac.Net.Db
             }
 
             var db = new DataBase() {Tables = tables};
-          //  Utility.TrimDataBaseProperties(db);
+            Utility.TrimDataBaseProperties(db);
             return db;
         }
 
@@ -473,13 +473,9 @@ namespace Dac.Net.Db
                     var check = !string.IsNullOrWhiteSpace(column.Check) ? $" CHECK({column.Check}) " : "";
                     var def = !string.IsNullOrWhiteSpace(column.Default) ? $" DEFAULT {column.Default} " : "";
 
-                    query.AppendLine("ALTER TABLE");
-                    query.AppendLine($"    [{tableName}]");
-                    query.AppendLine("ADD");
-                    query.AppendLine(
-                        $"`    [{columnName}] {type}{((column.Id ?? false) ? " IDENTITY" : "")}{((column.NotNull ?? false) ? " NOT NULL" : "")}{def}{check};");
+                    query.AppendLine($"ALTER TABLE [{tableName}] ADD [{columnName}] {type}{((column.Id ?? false) ? " IDENTITY" : "")}{((column.NotNull ?? false) ? " NOT NULL" : "")}{def}{check};");
 
-                    foreach (var (fkName, fk) in column.ForeignKeys)
+                    foreach (var (fkName, fk) in (column.ForeignKeys ?? new Dictionary<string, ForeignKey>()))
                     {
                         createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
                             fk.Update, fk.Delete));
@@ -515,11 +511,7 @@ namespace Dac.Net.Db
                     var check = !string.IsNullOrWhiteSpace(newColumn.Check) ? $" CHECK({newColumn.Check}) " : "";
                     var def = !string.IsNullOrWhiteSpace(newColumn.Default) ? $" DEFAULT {newColumn.Default} " : "";
 
-                    query.AppendLine("ALTER TABLE");
-                    query.AppendLine("    [${tableName}]");
-                    query.AppendLine("ALTER COLUMN");
-                    query.AppendLine(
-                        $"    [{columnName}] {type}{((newColumn.Id ?? false) ? " IDENTITY" : "")}{((newColumn.NotNull ?? false) ? " NOT NULL" : "")};");
+                    query.AppendLine($"ALTER TABLE [{tableName}] ALTER COLUMN [{columnName}] {type}{((newColumn.Id ?? false) ? " IDENTITY" : "")}{((newColumn.NotNull ?? false) ? " NOT NULL" : "")};");
 
                     if (orgColumn.Default != newColumn.Default)
                     {
@@ -560,12 +552,12 @@ namespace Dac.Net.Db
                     }
 
                     // foreign key
-                    var orgFkName = orgColumn.ForeignKeys.Keys;
-                    var newFkName = newColumn.ForeignKeys.Keys;
+                    var orgFk = orgColumn.ForeignKeys ?? new Dictionary<string, ForeignKey>();
+                    var newFk = newColumn.ForeignKeys ?? new Dictionary<string, ForeignKey>();
 
-                    foreach (var fkName in orgFkName.Concat(newFkName).Distinct())
+                    foreach (var fkName in orgFk.Keys.Concat(newFk.Keys).Distinct())
                     {
-                        if (!orgFkName.Contains(fkName))
+                        if (!orgFk.ContainsKey(fkName))
                         {
                             var fk = newColumn.ForeignKeys[fkName];
                             createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
@@ -573,7 +565,7 @@ namespace Dac.Net.Db
                             continue;
                         }
 
-                        if (!newFkName.Contains(fkName))
+                        if (!newFk.ContainsKey(fkName))
                         {
 
                             dropFkQuery.Add("ALTER TABLE");
@@ -582,17 +574,17 @@ namespace Dac.Net.Db
                             continue;
                         }
 
-                        if ((orgColumn.ForeignKeys[fkName].Update != newColumn.ForeignKeys[fkName].Update) ||
-                            (orgColumn.ForeignKeys[fkName].Delete != newColumn.ForeignKeys[fkName].Delete) ||
-                            (orgColumn.ForeignKeys[fkName].Table != newColumn.ForeignKeys[fkName].Table) ||
-                            (orgColumn.ForeignKeys[fkName].Column != newColumn.ForeignKeys[fkName].Column))
+                        if ((orgFk[fkName].Update != newFk[fkName].Update) ||
+                            (orgFk[fkName].Delete != newFk[fkName].Delete) ||
+                            (orgFk[fkName].Table != newFk[fkName].Table) ||
+                            (orgFk[fkName].Column != newFk[fkName].Column))
                         {
 
                             dropFkQuery.Add("ALTER TABLE");
                             dropFkQuery.Add($"    [dbo].[{tableName}]");
                             dropFkQuery.Add($"DROP CONSTRAINT [{fkName}];");
 
-                            var fk = newColumn.ForeignKeys[fkName];
+                            var fk = newFk[fkName];
                             createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
                                 fk.Update, fk.Delete));
                         }
@@ -803,7 +795,7 @@ namespace Dac.Net.Db
                 foreach (var (columnName, column) in table.Columns)
                 {
 
-                    if (column.ForeignKeys.Any())
+                    if (column.ForeignKeys?.Any() ?? false)
                     {
                         foreach (var (fkName, foreignKey) in column.ForeignKeys)
                         {

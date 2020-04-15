@@ -34,35 +34,38 @@ namespace Dac.Net.Db
         public bool Equals(Column target)
         {
             // foreign key check
-            var fkName1 = ForeignKeys.Keys;
-            var fkName2 = target.ForeignKeys.Keys;
+            var fk1 = (ForeignKeys ?? new Dictionary<string, ForeignKey>());
+            var fk2 = (target.ForeignKeys ?? new Dictionary<string, ForeignKey>());
 
             var fkDiff = false;
-            foreach (var fkName in fkName1.Concat(fkName2).Distinct())
+            foreach (var fkName in fk1.Keys.Concat(fk2.Keys).Distinct())
             {
-                if (!fkName1.Contains(fkName) || !fkName2.Contains(fkName))
+                if (!fk1.ContainsKey(fkName) || !fk2.ContainsKey(fkName))
                 {
                     fkDiff = true;
                     break;
                 }
 
-                if ((ForeignKeys[fkName].Update != target.ForeignKeys[fkName].Update) ||
-                    (ForeignKeys[fkName].Delete != target.ForeignKeys[fkName].Delete) ||
-                    (ForeignKeys[fkName].Table != target.ForeignKeys[fkName].Table) ||
-                    (ForeignKeys[fkName].Column != target.ForeignKeys[fkName].Column))
+                if ((fk1[fkName].Update != fk2[fkName].Update) ||
+                    (fk1[fkName].Delete != fk2[fkName].Delete) ||
+                    (fk1[fkName].Table != fk2[fkName].Table) ||
+                    (fk1[fkName].Column != fk2[fkName].Column))
                 {
                     fkDiff = true;
                     break;
                 }
             }
 
-            return Type == target.Type &&
+            return Type?.ToLower() == target.Type?.ToLower() &&
                    Length == target.Length &&
                    NotNull == target.NotNull &&
                    Id == target.Id &&
-                   Default == target.Default &&
-                   string.Join(",", fkName1) == string.Join(",", fkName2) &&
+                   Default?.ToLower() == target.Default?.ToLower() &&
+                   string.Join(",", fk1.Keys) == string.Join(",", fk2.Keys) &&
                    !fkDiff;
+
+
+
         }
 
     }
