@@ -94,51 +94,60 @@ namespace Dac.Net.Core
                         column.Default = null;
                     }
 
-                    if (column.LengthInt == 0)
+                    if (column.LengthInt == 0 || string.IsNullOrWhiteSpace(column.Length))
                     {
                         column.Length = null;
                     }
 
-                    foreach (var (fkName, fk) in column.ForeignKeys)
+
+                    if (column.ForeignKeys != null)
                     {
-                        if (string.IsNullOrEmpty(fk.Update))
+                        foreach (var (fkName, fk) in column.ForeignKeys)
                         {
-                            fk.Update = null;
+                            if (string.IsNullOrEmpty(fk.Update) || fk.Update == "NO_ACTION")
+                            {
+                                fk.Update = null;
+                            }
+
+                            if (string.IsNullOrWhiteSpace(fk.Delete) || fk.Delete == "NO_ACTION")
+                            {
+                                fk.Delete = null;
+                            }
                         }
 
-                        if (string.IsNullOrWhiteSpace(fk.Delete))
+                        if (!column.ForeignKeys.Any())
                         {
-                            fk.Delete = null;
+                            column.ForeignKeys = null;
                         }
-                    }
-
-                    if (!column.ForeignKeys.Any())
-                    {
-                        column.ForeignKeys = null;
                     }
 
                 }
 
-                foreach (var (indexName, index) in table.Indices)
+                if (table.Indices != null)
                 {
-                    if (!(index.Unique ?? false))
+                    foreach (var (indexName, index) in table.Indices)
                     {
-                        index.Unique = null;
+                        if (!(index.Unique ?? false))
+                        {
+                            index.Unique = null;
+                        }
+
+                        index.Type = index.Type?.ToLower();
+
+                        var indexColumns = new Dictionary<string, string>();
+                        foreach (var (indexColumnName, direction) in index.Columns)
+                        {
+                            indexColumns.Add(indexColumnName, (direction ?? "").ToLower());
+                        }
+
+                        index.Columns = indexColumns;
+
                     }
 
-                    var indexColumns = new Dictionary<string, string>();
-                    foreach (var (indexColumnName, direction) in index.Columns)
+                    if (!table.Indices.Any())
                     {
-                        indexColumns.Add(indexColumnName, (direction ?? "").ToLower());
+                        table.Indices = null;
                     }
-
-                    index.Columns = indexColumns;
-
-                }
-
-                if (!table.Indices.Any())
-                {
-                    table.Indices = null;
                 }
             }
         }

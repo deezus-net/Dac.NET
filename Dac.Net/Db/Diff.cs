@@ -77,32 +77,34 @@ namespace Dac.Net.Db
                     }
 
                     // indexes
-                    var indexNames = CurrentDb.Tables[tableName].Indices.Keys
-                        .Concat(NewDb.Tables[tableName].Indices.Keys).Distinct();
+                    var currentIndices = CurrentDb.Tables[tableName].Indices ?? new Dictionary<string, Index>();
+                    var newIndices = NewDb.Tables[tableName].Indices ?? new Dictionary<string, Index>();
+                    
+                    var indexNames = currentIndices.Keys.Concat(newIndices.Keys).Distinct();
 
                     foreach (var indexName in indexNames)
                     {
-                        if (!NewDb.Tables[tableName].Indices.ContainsKey(indexName))
+                        if (!newIndices.ContainsKey(indexName))
                         {
                             InitModifiedTable(tableName);
                             ModifiedTables[tableName].DeletedIndexNames.Add(indexName);
 
                         }
-                        else if (!CurrentDb.Tables[tableName].Indices.ContainsKey(indexName))
+                        else if (!currentIndices.ContainsKey(indexName))
                         {
                             InitModifiedTable(tableName);
-                            ModifiedTables[tableName].AddedIndices.Add(indexName, NewDb.Tables[tableName].Indices[indexName]);
+                            ModifiedTables[tableName].AddedIndices.Add(indexName, newIndices[indexName]);
 
                         }
-                        else if (!NewDb.Tables[tableName].Indices[indexName]
-                            .Equals(CurrentDb.Tables[tableName].Indices[indexName]))
+                        else if (!newIndices[indexName]
+                            .Equals(currentIndices[indexName]))
                         {
                             InitModifiedTable(tableName);
                       //     NewDb.Tables[tableName].Indices[indexName].Name = indexName;
                             ModifiedTables[tableName].ModifiedIndices[indexName] = new[]
                             {
-                                CurrentDb.Tables[tableName].Indices[indexName],
-                                NewDb.Tables[tableName].Indices[indexName]
+                                currentIndices[indexName],
+                                newIndices[indexName]
                             };
 
                         }

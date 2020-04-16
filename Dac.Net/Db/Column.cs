@@ -22,14 +22,7 @@ namespace Dac.Net.Db
         public string Comment { get; set; }
 
         [YamlIgnore]
-        public int LengthInt
-        {
-            get
-            {
-                int.TryParse(Length, out var length);
-                return length;
-            }
-        }
+        public int LengthInt => int.TryParse(Length, out var length) ? length : int.MaxValue;
 
         public bool Equals(Column target)
         {
@@ -57,7 +50,7 @@ namespace Dac.Net.Db
             }
 
             return Type?.ToLower() == target.Type?.ToLower() &&
-                   Length == target.Length &&
+                   Length?.ToLower() == target.Length?.ToLower() &&
                    NotNull == target.NotNull &&
                    Id == target.Id &&
                    Default?.ToLower() == target.Default?.ToLower() &&

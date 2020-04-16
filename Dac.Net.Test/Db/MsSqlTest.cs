@@ -86,6 +86,33 @@ namespace Dac.Net.Test.Db
             var sql = new MsSql(server);
             var res = sql.Connect();
             var query = sql.Update(db, true, false);
+            _output.WriteLine(query ?? "");
+            Assert.False(string.IsNullOrWhiteSpace(query));
+        }
+        
+        [Fact]
+        public void DropTest()
+        {
+            var server = Utility.LoadServers("TestData/servers.yml")["mssql"];
+            var db = Utility.LoadDataBase("TestData/mssql.yml");
+            Utility.TrimDataBaseProperties(db);
+            
+            var sql = new MsSql(server);
+            var res = sql.Connect();
+            var query = sql.Drop(db, true);
+            _output.WriteLine(query);
+            Assert.False(string.IsNullOrWhiteSpace(query));
+        }
+        
+        [Fact]
+        public void QueryTest()
+        {
+            var server = Utility.LoadServers("TestData/servers.yml")["mssql"];
+            var db = Utility.LoadDataBase("TestData/mssql.yml");
+            
+            var sql = new MsSql(server);
+            var res = sql.Connect();
+            var query = sql.Query(db);
             _output.WriteLine(query);
             Assert.False(string.IsNullOrWhiteSpace(query));
         }

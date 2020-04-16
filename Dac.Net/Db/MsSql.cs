@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
@@ -22,7 +23,53 @@ namespace Dac.Net.Db
 
         public string Drop(DataBase db, bool queryOnly)
         {
-            throw new System.NotImplementedException();
+            var queries = new StringBuilder();
+
+            const string query = @"
+                    SELECT
+                        t.name AS table_name,
+                        fk.name AS fk_name
+                    FROM
+                        sys.tables AS t
+                    LEFT OUTER JOIN
+                        sys.foreign_keys AS fk
+                    ON
+                        fk.parent_object_id = t.object_id
+                    ";
+            foreach (DataRow row in GetResult(query).Rows)
+            {
+
+                var tableName = row.Field<string>("table_name");
+                var kfName = row.Field<string>("fk_name");
+                if (db.Tables.ContainsKey(tableName) && !string.IsNullOrWhiteSpace(kfName))
+                {
+                    queries.AppendLine(
+                        $"ALTER TABLE [{tableName}] DROP CONSTRAINT [{kfName}];");
+                }
+            }
+
+
+            foreach (var (tableName, table) in db.Tables)
+            {
+                queries.AppendLine($"DROP TABLE IF EXISTS [{tableName}];");
+            }
+
+            var result = queries.ToString();
+            if (queryOnly)
+            {
+                return result;
+            }
+
+            using (var trn = _sqlConnection.BeginTransaction())
+            {
+                using (var cmd = new SqlCommand(result, trn.Connection, trn))
+                {
+                    cmd.ExecuteNonQuery();
+                    trn.Commit();
+                }
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -44,7 +91,8 @@ namespace Dac.Net.Db
                     col.name AS column_name,
                     i.is_primary_key,
                     c.is_descending_key,
-                    i.is_unique
+                    i.is_unique,
+                    i.type_desc
                 FROM
                     sys.indexes as i 
                 INNER JOIN
@@ -90,11 +138,21 @@ namespace Dac.Net.Db
                     var indexName = row.Field<string>("index_name");
                     if (!indices[tableName].ContainsKey(indexName))
                     {
-                        indices[tableName].Add(indexName, new Index() {Unique = row.Field<bool>("is_unique")});
+                        indices[tableName].Add(indexName, new Index() {Unique = row.Field<bool>("is_unique"), Type = row.Field<string>("type_desc")});
                     }
 
-                    indices[tableName][indexName].Columns[row.Field<string>("column_name")] =
-                        row.Field<bool>("is_descending_key") ? "desc" : "asc";
+                    var type = row.Field<string>("type_desc").ToLower();
+
+                    if (type == "spatial")
+                    {
+                        indices[tableName][indexName].Columns[row.Field<string>("column_name")] = "";
+                    }
+                    else
+                    {
+                        indices[tableName][indexName].Columns[row.Field<string>("column_name")] =
+                            row.Field<bool>("is_descending_key") ? "desc" : "asc";
+                    }
+                    
                 }
             }
 
@@ -131,16 +189,26 @@ namespace Dac.Net.Db
                 }
 
                 var length = row.Field<short>("max_length");
+                var lengthString = "";
                 var type = row.Field<string>("type");
                 switch (type)
                 {
                     case "nvarchar":
                     case "nchar":
-                        length /= 2;
+                        if (length > 0)
+                        {
+                            length /= 2;
+                            lengthString = length.ToString();
+                        }
+                        else
+                        {
+                            lengthString = "max";
+                        }
+
                         break;
                     case "int":
                     case "datetime":
-                        length = 0;
+                        lengthString = "0";
                         break;
                 }
 
@@ -150,7 +218,7 @@ namespace Dac.Net.Db
                     {
                         Id = row.Field<bool>("is_identity"),
                         Type = row.Field<string>("type"),
-                        Length = Convert.ToString(length),
+                        Length = lengthString,
                         NotNull = !row.Field<bool>("is_nullable"),
                         Pk = pk.ContainsKey(tableName) && pk[tableName].Contains(row.Field<string>("column_name"))
                     }
@@ -322,10 +390,9 @@ namespace Dac.Net.Db
         /// </summary>
         /// <param name="db"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public string Query(DataBase db)
         {
-            throw new System.NotImplementedException();
+            return CreateQuery(db);
         }
 
         /// <summary>
@@ -400,10 +467,7 @@ namespace Dac.Net.Db
             // drop exist foreign keys
             foreach (var (fkName, tableName) in foreignKeys)
             {
-                queries.AppendLine("ALTER TABLE");
-                queries.AppendLine($"[{tableName}]");
-                queries.AppendLine("DROP CONSTRAINT");
-                queries.AppendLine($"[{fkName}];");
+                queries.AppendLine($"ALTER TABLE [{tableName}] DROP CONSTRAINT [{fkName}];");
             }
 
             // drop exist tables
@@ -441,7 +505,6 @@ namespace Dac.Net.Db
         /// <param name="queryOnly"></param>
         /// <param name="dropTable"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public string Update(DataBase db, bool queryOnly, bool dropTable)
         {
             var diff = Diff(db);
@@ -465,7 +528,7 @@ namespace Dac.Net.Db
                 foreach (var (columnName, column) in table.AddedColumns)
                 {
                     var type = (column.Id ?? false) ? "int" : column.Type;
-                    if (column.LengthInt > 0)
+                    if (column.LengthInt > 0 && !string.IsNullOrWhiteSpace(column.Length))
                     {
                         type += $"({column.Length})";
                     }
@@ -489,21 +552,20 @@ namespace Dac.Net.Db
                     var newColumn = columns[1];
 
                     // if change execute alter
-                    foreach (var (indexName, index ) in orgTable.Indices.Where(x =>
+                    foreach (var (indexName, index ) in (orgTable.Indices ?? new Dictionary<string, Index>()).Where(x =>
                         x.Value.Columns.ContainsKey(columnName))
                     )
                     {
                         if (!droppedIndexNames.Contains(indexName))
                         {
                             query.AppendLine($"DROP INDEX [{indexName}] ON [{tableName}];");
-
                             droppedIndexNames.Add(indexName);
                         }
                     }
 
 
                     var type = (newColumn.Id ?? false) ? "int" : newColumn.Type;
-                    if (newColumn.LengthInt > 0)
+                    if (newColumn.LengthInt > 0 && !string.IsNullOrWhiteSpace(newColumn.Length))
                     {
                         type += $"({newColumn.Length})";
                     }
@@ -517,17 +579,12 @@ namespace Dac.Net.Db
                     {
                         if (!string.IsNullOrWhiteSpace(orgColumn.DefaultName))
                         {
-                            query.AppendLine("ALTER TABLE");
-                            query.AppendLine($"    [{tableName}]");
-                            query.AppendLine("DROP CONSTRAINT");
-                            query.AppendLine($"    [{orgColumn.DefaultName}];");
+                            query.AppendLine($"ALTER TABLE [{tableName}] DROP CONSTRAINT [{orgColumn.DefaultName}];");
                         }
 
                         if (!string.IsNullOrWhiteSpace(newColumn.Default))
                         {
-                            query.AppendLine("ALTER TABLE");
-                            query.AppendLine($"    [{tableName}]");
-                            query.AppendLine($"ADD DEFAULT {newColumn.Default} FOR [${columnName}];");
+                            query.AppendLine($"ALTER TABLE [{tableName}] ADD DEFAULT {newColumn.Default} FOR [{columnName}];");
                         }
                     }
 
@@ -536,18 +593,13 @@ namespace Dac.Net.Db
                         // drop old check
                         if (!string.IsNullOrWhiteSpace(orgColumn.CheckName))
                         {
-                            query.AppendLine("ALTER TABLE");
-                            query.AppendLine($"    [{tableName}]");
-                            query.AppendLine("DROP CONSTRAINT");
-                            query.AppendLine($"    [{orgColumn.CheckName}];");
+                            query.AppendLine($"ALTER TABLE [{tableName}] DROP CONSTRAINT [{orgColumn.CheckName}];");
                         }
 
                         // add new check
                         if (!string.IsNullOrWhiteSpace(newColumn.Check))
                         {
-                            query.AppendLine("ALTER TABLE");
-                            query.AppendLine($"    [{tableName}]");
-                            query.AppendLine($"ADD CHECK({newColumn.Check});");
+                            query.AppendLine($"ALTER TABLE [{tableName}] ADD CHECK({newColumn.Check});");
                         }
                     }
 
@@ -568,9 +620,7 @@ namespace Dac.Net.Db
                         if (!newFk.ContainsKey(fkName))
                         {
 
-                            dropFkQuery.Add("ALTER TABLE");
-                            dropFkQuery.Add($"    [dbo].[{tableName}]");
-                            dropFkQuery.Add($"DROP CONSTRAINT [{fkName}];");
+                            dropFkQuery.Add($"ALTER TABLE [dbo].[{tableName}] DROP CONSTRAINT [{fkName}];");
                             continue;
                         }
 
@@ -580,9 +630,7 @@ namespace Dac.Net.Db
                             (orgFk[fkName].Column != newFk[fkName].Column))
                         {
 
-                            dropFkQuery.Add("ALTER TABLE");
-                            dropFkQuery.Add($"    [dbo].[{tableName}]");
-                            dropFkQuery.Add($"DROP CONSTRAINT [{fkName}];");
+                            dropFkQuery.Add($"ALTER TABLE [dbo].[{tableName}] DROP CONSTRAINT [{fkName}];");
 
                             var fk = newFk[fkName];
                             createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
@@ -596,26 +644,19 @@ namespace Dac.Net.Db
                 {
                     if (!string.IsNullOrWhiteSpace(diff.CurrentDb.Tables[tableName].Columns[columnName].DefaultName))
                     {
-                        query.AppendLine("ALTER TABLE");
-                        query.AppendLine($"    [{tableName}]");
-                        query.AppendLine(
-                            $"DROP CONSTRAINT [{diff.CurrentDb.Tables[tableName].Columns[columnName].DefaultName}];");
+                        query.AppendLine($"ALTER TABLE [{tableName}] DROP CONSTRAINT [{diff.CurrentDb.Tables[tableName].Columns[columnName].DefaultName}];");
                     }
 
-                    query.AppendLine("ALTER TABLE");
-                    query.AppendLine($"    [{tableName}]");
-                    query.AppendLine($"DROP COLUMN [{columnName}];");
+                    query.AppendLine($"ALTER TABLE [{tableName}] DROP COLUMN [{columnName}];");
 
                 }
 
                 // create index
                 foreach (var (indexName, index) in table.AddedIndices)
                 {
-                    query.AppendLine("CREATE");
-                    query.AppendLine($"    {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX [{indexName}]");
-                    query.AppendLine("ON");
-                    query.AppendLine(
-                        $"    [dbo].[{tableName}](${string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});");
+                    query.AppendLine(IndexQuery(tableName, indexName, index));
+                   // query.AppendLine(
+                   //     $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX [{indexName}] ON [{tableName}]({string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});");
                 }
 
                 // modify index
@@ -624,15 +665,16 @@ namespace Dac.Net.Db
                     var index = indices[1];
                     if (!droppedIndexNames.Contains(indexName))
                     {
-                        query.AppendLine("DROP INDEX");
-                        query.AppendLine($"    [{tableName}].[{indexName}];");
+                        query.AppendLine($"DROP INDEX [{tableName}].[{indexName}];");
                     }
 
-                    query.AppendLine("CREATE");
+                    query.AppendLine(IndexQuery(tableName, indexName, index));
+                    
+                   /* query.AppendLine("CREATE");
                     query.AppendLine($"    {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX [{indexName}]");
                     query.AppendLine("ON");
                     query.AppendLine(
-                        $"    [dbo].[{tableName}](${string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});");
+                        $"    [dbo].[{tableName}](${string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});"); */
                 }
 
                 // drop index
@@ -769,7 +811,7 @@ namespace Dac.Net.Db
                     var notNull = (column.NotNull ?? false) ? " NOT NULL " : "";
                     var check = !string.IsNullOrWhiteSpace(column.Check) ? $" CHECK({column.Check}) " : "";
                     var def = !string.IsNullOrWhiteSpace(column.Default) ? $" DEFAULT {column.Default} " : "";
-                    var type = column.Type + (column.LengthInt > 0 ? $"({column.LengthInt})" : "");
+                    var type = column.Type + ((column.LengthInt > 0 && !string.IsNullOrWhiteSpace(column.Length)) ? $"({column.Length})" : "");
 
                     columnQuery.Add($"    [{columnName}] {type}{identity}{notNull}{def}{check}");
                     if ((column.Pk ?? false) || (column.Id ?? false))
@@ -808,13 +850,16 @@ namespace Dac.Net.Db
                 query.AppendLine(");");
 
                 var num = 1;
-                foreach (var (indexName, index) in table.Indices)
+                foreach (var (indexName, index) in (table.Indices ?? new Dictionary<string, Index>()))
                 {
                     var name = !string.IsNullOrWhiteSpace(indexName) ? indexName : $"INDEX_{tableName}_${num++}";
+
+                    query.AppendLine(IndexQuery(tableName, name, index));
+                    /*
                     query.AppendLine($"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX [{name}] ON [dbo].[{tableName}](");
                     query.AppendLine(
                         $"    {string.Join(",", index.Columns.Keys.Select(c => $"[{c}] {index.Columns[c]}"))}");
-                    query.AppendLine(");");
+                    query.AppendLine(");");*/
                 }
 
             }
@@ -894,6 +939,12 @@ namespace Dac.Net.Db
             }
 
             return res;
+        }
+
+        private string IndexQuery(string tableName, string indexName, Index index)
+        {
+            return
+                $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}{(!string.IsNullOrWhiteSpace(index.Type) ? index.Type + " " : "")}INDEX [{indexName}] ON [{tableName}]({string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});";
         }
 
     }
