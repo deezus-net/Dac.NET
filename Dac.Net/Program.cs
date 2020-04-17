@@ -1,4 +1,6 @@
 ﻿using System;
+using Dac.Net.Core;
+using Dac.Net.Db;
 
 namespace Dac.Net
 {
@@ -6,7 +8,8 @@ namespace Dac.Net
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var core = new Main(args) {OutPut = Console.WriteLine};
+            core.Run();
         }
     }
 }
