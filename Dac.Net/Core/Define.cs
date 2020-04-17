@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Dac.Net.Core
 {
     public class Define
@@ -19,6 +21,22 @@ namespace Dac.Net.Core
             public const string Mysql = "mysql";
             public const string Postgres = "postgres";
             public const string MsSql = "mssql";
+        }
+
+        public class ColumnType
+        {
+            public static Dictionary<string, string> PgSql = new Dictionary<string, string>()
+            {
+
+                {"integer", "int"},
+                {"character varying", "varchar"},
+                {"serial", "int"},
+                {"timestamp without time zone", "timestamp"}
+            };
+
+            public static Dictionary<string, string> MySql = new Dictionary<string, string>();
+
+            public static Dictionary<string, string> MsSql = new Dictionary<string, string>();
         }
     }
 }

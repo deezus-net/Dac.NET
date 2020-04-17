@@ -13,7 +13,7 @@ namespace Dac.Net.Db
 {
     public class MsSql : IDb
     {
-        private Server _server;
+        private readonly Server _server;
         private SqlConnection _sqlConnection;
 
         public MsSql(Server server)
