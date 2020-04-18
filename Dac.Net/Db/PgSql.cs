@@ -302,7 +302,7 @@ namespace Dac.Net.Db
 
         public string Query(DataBase db)
         {
-            throw new System.NotImplementedException();
+            return CreateQuery(db);
         }
 
         /// <summary>

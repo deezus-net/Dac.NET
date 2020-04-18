@@ -23,8 +23,10 @@ namespace Dac.Net.Core
                 switch (server.Type)
                 {
                     case Define.DatabaseType.Mysql:
+                        db = new Db.MySql(server);
                         break;
                     case Define.DatabaseType.Postgres:
+                        db = new PgSql(server);
                         break;
                     case Define.DatabaseType.MsSql:
                         db = new MsSql(server);
