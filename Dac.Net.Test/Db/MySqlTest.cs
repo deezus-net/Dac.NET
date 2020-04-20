@@ -23,7 +23,7 @@ namespace Dac.Net.Test.Db
             Assert.True(res);
         }
         
-        [Fact]
+/*        [Fact]
         public void ExtractTest()
         {
             var server = Utility.LoadServers("TestData/servers.yml")["mysql"];
@@ -114,6 +114,6 @@ namespace Dac.Net.Test.Db
             var query = sql.Query(db);
             _output.WriteLine(query);
             Assert.False(string.IsNullOrWhiteSpace(query));
-        }
+        }*/
     }
 }
