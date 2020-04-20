@@ -229,8 +229,8 @@ namespace Dac.Net.Db
             {
                 tables.Add(tableName, new Table()
                 {
-                    Columns = columns[tableName],
-                    Indices = indices[tableName]
+                    Columns = columns.ContainsKey(tableName) ? columns[tableName] : new Dictionary<string, Column>(),
+                    Indices = indices.ContainsKey(tableName) ? indices[tableName] : new Dictionary<string, Index>()
                 });
             }
 
