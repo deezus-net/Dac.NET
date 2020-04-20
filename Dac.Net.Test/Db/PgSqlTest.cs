@@ -24,19 +24,6 @@ namespace Dac.Net.Test.Db
             Assert.True(res);
         }
         
-   /*     [Fact]
-        public void ExtractTest()
-        {
-            var server = Utility.LoadServers("TestData/servers.yml")["pgsql"];
-            var sql = new PgSql(server);
-            var res = sql.Connect();
-            var db = sql.Extract();
-            var yaml = Utility.DataBaseToYaml(db);
-            _output.WriteLine(yaml);
-            Assert.NotEmpty(db.Tables);
-        }
-        
-        
         [Fact]
         public void CreateTest()
         {
@@ -49,6 +36,21 @@ namespace Dac.Net.Test.Db
             _output.WriteLine(query);
             Assert.False(string.IsNullOrWhiteSpace(query));
         }
+        
+        [Fact]
+        public void ExtractTest()
+        {
+            var server = Utility.LoadServers("TestData/servers.yml")["pgsql"];
+            var sql = new PgSql(server);
+            var res = sql.Connect();
+            var db = sql.Extract();
+            var yaml = Utility.DataBaseToYaml(db);
+            _output.WriteLine(yaml);
+            Assert.NotEmpty(db.Tables);
+        }
+        
+        
+        
         
         [Fact]
         public void ReCreateTest()
@@ -115,6 +117,6 @@ namespace Dac.Net.Test.Db
             var query = sql.Query(db);
             _output.WriteLine(query);
             Assert.False(string.IsNullOrWhiteSpace(query));
-        }*/
+        }
     }
 }
