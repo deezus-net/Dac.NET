@@ -34,10 +34,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
-      - name: setup dotnet
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '3.1'
+      - name: dotnet build
+        uses: docker://mcr.microsoft.com/dotnet/core/sdk:3.1
       - name: info
         run: dotnet --info
       - name: ls
