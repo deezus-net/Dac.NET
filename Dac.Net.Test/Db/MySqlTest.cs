@@ -32,6 +32,7 @@ namespace Dac.Net.Test.Db
             
             var sql = new Net.Db.MySql(server);
             var res = sql.Connect();
+            
             var query = sql.Drop(db, false);
             _output.WriteLine(query);
             Assert.False(string.IsNullOrWhiteSpace(query));
@@ -44,7 +45,9 @@ namespace Dac.Net.Test.Db
             var db = Utility.LoadDataBase("TestData/mysql.yml");
 
             var sql = new Net.Db.MySql(server);
+            
             var res = sql.Connect();
+            sql.Drop(db, false);
             var query = sql.Create(db, false);
             _output.WriteLine(query);
             Assert.False(string.IsNullOrWhiteSpace(query));
@@ -80,10 +83,12 @@ namespace Dac.Net.Test.Db
         {
             var server = Utility.LoadServers("TestData/servers.yml")["mysql"];
             var db = Utility.LoadDataBase("TestData/mysql.yml");
-            Utility.TrimDataBaseProperties(db);
+            
                 
             var sql = new Net.Db.MySql(server);
             var res = sql.Connect();
+            sql.ReCreate(db, false);
+            Utility.TrimDataBaseProperties(db);
             var diff = sql.Diff(db);
             Assert.False(diff.HasDiff);
         }
@@ -93,13 +98,16 @@ namespace Dac.Net.Test.Db
         {
             var server = Utility.LoadServers("TestData/servers.yml")["mysql"];
             var db = Utility.LoadDataBase("TestData/mysql.yml");
-            Utility.TrimDataBaseProperties(db);
-            
             var sql = new Net.Db.MySql(server);
             var res = sql.Connect();
+            sql.ReCreate(db, false);
+            
+            Utility.TrimDataBaseProperties(db);
+            
+            
             var query = sql.Update(db, false, false);
             _output.WriteLine(query ?? "");
-            Assert.False(string.IsNullOrWhiteSpace(query));
+            Assert.True(string.IsNullOrWhiteSpace(query));
         }
         
      

@@ -588,11 +588,11 @@ namespace Dac.Net.Db
                     query.AppendLine("    PRIMARY KEY");
                     query.AppendLine("    (");
                     query.AppendLine(string.Join(",\n", pk.Select(x => $"        `{x}`")));
-                    query.AppendLine($"    ){(table.Indices.Any() ? "," : "")}");
+                    query.AppendLine($"    ){((table.Indices?.Any() ?? false) ? "," : "")}");
                 }
 
                 var indexQuery = new StringBuilder();
-                foreach (var (indexName, index) in table.Indices)
+                foreach (var (indexName, index) in (table.Indices ?? new Dictionary<string, Index>()))
                 {
                     indexQuery.AppendLine(
                         $"    {((index.Unique ?? false) ? "UNIQUE " : "")}{((index.Type ?? "").ToLower() == "fulltext" ? "FULLTEXT " : "")}INDEX `{indexName}`({string.Join(",", index.Columns.Select(x => $"`{x.Key}` {x.Value}"))})");

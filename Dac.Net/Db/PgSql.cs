@@ -716,7 +716,7 @@ namespace Dac.Net.Db
 
                 query.AppendLine(");");
 
-                foreach (var (indexName, index) in table.Indices)
+                foreach (var (indexName, index) in (table.Indices ?? new Dictionary<string, Index>()))
                 {
                     query.AppendLine(
                         $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX \"{indexName}\" ON \"{tableName}\"(");

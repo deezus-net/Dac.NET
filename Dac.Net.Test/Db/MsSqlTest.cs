@@ -46,13 +46,14 @@ namespace Dac.Net.Test.Db
 
             var sql = new MsSql(server);
             var res = sql.Connect();
+            sql.Drop(db, false);
             var query = sql.Create(db, false);
             _output.WriteLine(query);
             Assert.False(string.IsNullOrWhiteSpace(query));
         }
         
         
-        [Fact]
+       [Fact]
        public void ExtractTest()
         {
             var server = Utility.LoadServers("TestData/servers.yml")["mssql"];
@@ -101,7 +102,7 @@ namespace Dac.Net.Test.Db
             var res = sql.Connect();
             var query = sql.Update(db, true, false);
             _output.WriteLine(query ?? "");
-            Assert.False(string.IsNullOrWhiteSpace(query));
+            Assert.True(string.IsNullOrWhiteSpace(query));
         }
         
        

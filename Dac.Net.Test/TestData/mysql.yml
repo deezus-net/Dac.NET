@@ -17,14 +17,14 @@ tables:
           fk_groups:
             table: groups
             column: id
-        check: group_id > 0
       modified:
         type: timestamp
         notNull: true
+        default: CURRENT_TIMESTAMP
       created:
         type: timestamp
         notNull: true
-        default: NOW()
+        default: CURRENT_TIMESTAMP
     indices:
       IX_name:
         columns:

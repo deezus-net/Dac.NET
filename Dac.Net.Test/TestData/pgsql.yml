@@ -7,7 +7,6 @@ tables:
         type: varchar
         length: 100
         notNull: true
-        check: name != 'test'
   #    address:
   #      type: nvarchar
   #      length: max
