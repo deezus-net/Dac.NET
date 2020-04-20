@@ -9,7 +9,7 @@ jobs:
     services:
       mysql:
         image: mysql:5
-        environment:
+        env:
           MYSQL_RANDOM_ROOT_PASSWORD: 1
           MYSQL_DATABASE: dac
           MYSQL_USER: dac
@@ -18,7 +18,7 @@ jobs:
           - "3306:3306"
       postgres:
         image: postgres
-        environment:
+        env:
           POSTGRES_USER: dac
           POSTGRES_PASSWORD: dac
           POSTGRES_DB: dac
@@ -26,7 +26,7 @@ jobs:
           - "5432:5432"
       mssql:
         image: mcr.microsoft.com/mssql/server
-        environment:
+        env:
           ACCEPT_EULA: Y
           SA_PASSWORD: "!Passw0rd"
         ports:
