@@ -5,6 +5,7 @@ on:
       - develop
 jobs:
   build:
+    runs-on: ubuntu-latest
     steps:
       - name: dotnet build
         uses: docker://mcr.microsoft.com/dotnet/core/sdk:3.1
