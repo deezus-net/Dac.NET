@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Dac.Net.Core;
 using Microsoft.Data.SqlClient;
 using MySql.Data.MySqlClient.X.XDevAPI.Common;
@@ -89,7 +90,7 @@ namespace Dac.Net.Db
 
                 foreach (DataRow row in GetResult(query, null, new NpgsqlParameter("table_name", tableName)).Rows)
                 {
-                    var id = sequences.Any(seq => row.Field<string>("column_default").Contains(seq));
+                    var id = sequences.Any(seq => (row.Field<string>("column_default") ?? "").Contains(seq));
                     var type = id ? "serial" : row.Field<string>("data_type");
                     var length = row.Field<int?>("character_maximum_length") ?? 0;
 
@@ -165,6 +166,17 @@ namespace Dac.Net.Db
 
                     }
 
+                    var m = Regex.Match(indexDef, @"\((.*)\)");
+                    if (m.Success)
+                    {
+                        foreach (var col in m.Groups[1].Value.Split(",")) {
+                            var tmp = col.Trim().Split(" ");
+                            if (table.Columns.ContainsKey(tmp[0])) {
+                                table.Indices[indexName].Columns.Add(tmp[0], tmp.Length > 1 ? tmp[1] : "ASC");
+                            }
+                        }
+                    }
+
 /*
                 const m = (indexdef.match(/\(.*\)/) || [])[0];
                 if (!m) {
@@ -205,7 +217,7 @@ namespace Dac.Net.Db
                 // get check list
                 query = @"
                         SELECT
-                            co.consrc,
+                            pg_get_constraintdef(co.oid) as def,
                             co.conname
                         FROM
                             pg_constraint AS co 
@@ -220,13 +232,22 @@ namespace Dac.Net.Db
 
                 foreach (DataRow row in GetResult(query, null, new NpgsqlParameter("relname", tableName)).Rows)
                 {
-                    /*const consrc = (row['consrc'].match(/\((.*)\)/) || [])[1] || row['consrc'];
-                    for (const colName of Object.keys(table.columns)) {
-                        if (consrc.indexOf(colName) !== -1) {
-                            table.columns[colName].check = consrc;
-                            table.columns[colName].checkName = row['conname'];
+                    var m = Regex.Match(row.Field<string>("def"), @"\((.*)\)");
+                    if (!m.Success)
+                    {
+                        continue;
+                    }
+                    var check = m.Groups[1].Value;
+                    foreach (var (columnName, column) in table.Columns)
+                    {
+                        if (!check.Contains(columnName))
+                        {
+                            continue;
                         }
-                    }*/
+                        column.Check = check;
+                        column.CheckName = row.Field<string>("conname");
+                        break;
+                    }
                 }
 
 
@@ -259,13 +280,13 @@ namespace Dac.Net.Db
                     AND
                         tc.table_name = @table_name";
                 var fkData = GetResult(query, null, new NpgsqlParameter("table_name", tableName));
-                var conf = new Dictionary<string, string>
+                var conf = new Dictionary<char, string>
                 {
-                    {"a", ""},
-                    {"r", "RESTRICT"},
-                    {"c", "CASCADE"},
-                    {"n", "SET NULL"},
-                    {"d", "SET DEFAULT"}
+                    {'a', ""},
+                    {'r', "RESTRICT"},
+                    {'c', "CASCADE"},
+                    {'n', "SET NULL"},
+                    {'d', "SET DEFAULT"}
                 };
                 foreach (DataRow row in fkData.Rows)
                 {
@@ -276,11 +297,11 @@ namespace Dac.Net.Db
                         continue;
                     }
 
-                    var update = conf.ContainsKey(row.Field<string>("confupdtype"))
-                        ? conf[row.Field<string>("confupdtype")]
+                    var update = conf.ContainsKey(row.Field<char>("confupdtype"))
+                        ? conf[row.Field<char>("confupdtype")]
                         : "";
-                    var del = conf.ContainsKey(row.Field<string>("confdeltype"))
-                        ? conf[row.Field<string>("confdeltype")]
+                    var del = conf.ContainsKey(row.Field<char>("confdeltype"))
+                        ? conf[row.Field<char>("confdeltype")]
                         : "";
 
                     var key = row.Field<string>("foreign_table_name") + '.' + row.Field<string>("foreign_column_name");
@@ -661,7 +682,7 @@ namespace Dac.Net.Db
 
                 query.AppendLine($"CREATE TABLE {tableName}(");
 
-                var columnQuery = new StringBuilder();
+                var columnQuery = new List<string>();
                 var pk = new List<string>();
                 foreach (var (columnName, column) in table.Columns)
                 {
@@ -674,20 +695,20 @@ namespace Dac.Net.Db
                     var notNull = (column.NotNull ?? false) ? " NOT NULL " : "";
                     var check = !string.IsNullOrWhiteSpace(column.Check) ? $" CHECK({column.Check}) " : "";
                     var def = !string.IsNullOrWhiteSpace(column.Default) ? $" DEFAULT {column.Default} " : "";
-                    var type = column.Type + (column.LengthInt > 0 ? $"({column.Length})" : "");
+                    var type = column.Type + (column.LengthInt > 0 && !string.IsNullOrWhiteSpace(column.Length) ? $"({column.Length})" : "");
 
-                    columnQuery.AppendLine($"    {columnName} {type}{notNull}{check}{def}");
+                    columnQuery.Add($"    \"{columnName}\" {type}{notNull}{check}{def}");
                     if ((column.Pk ?? false) || (column.Id ?? false))
                     {
                         pk.Add(columnName);
                     }
                 }
 
-                query.AppendLine(columnQuery + (pk.Any() ? "," : ""));
+                query.AppendLine(string.Join(",\n", columnQuery) + (pk.Any() ? "," : ""));
 
                 if (pk.Any())
                 {
-                    query.AppendLine($"    CONSTRAINT PK_{tableName} PRIMARY KEY ");
+                    query.AppendLine($"    CONSTRAINT \"PK_{tableName}\" PRIMARY KEY ");
                     query.AppendLine("    (");
                     query.AppendLine(string.Join(",\n", pk.Select(x => $"        {x}")));
                     query.AppendLine("    )");
@@ -698,8 +719,8 @@ namespace Dac.Net.Db
                 foreach (var (indexName, index) in table.Indices)
                 {
                     query.AppendLine(
-                        $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX {indexName} ON {tableName}(");
-                    query.AppendLine($"    {string.Join(",", index.Columns.Select(x => x))}");
+                        $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX \"{indexName}\" ON \"{tableName}\"(");
+                    query.AppendLine($"    {string.Join(",", index.Columns.Select(x => $"{x.Key} {x.Value}"))}");
                     query.AppendLine(");");
                 }
 

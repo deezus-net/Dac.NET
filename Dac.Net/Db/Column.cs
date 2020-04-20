@@ -54,6 +54,7 @@ namespace Dac.Net.Db
                    NotNull == target.NotNull &&
                    Id == target.Id &&
                    Default?.ToLower() == target.Default?.ToLower() &&
+                   Check == target.Check &&
                    string.Join(",", fk1.Keys) == string.Join(",", fk2.Keys) &&
                    !fkDiff;
 

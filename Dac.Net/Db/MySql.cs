@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Dac.Net.Core;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Math.Field;
@@ -76,9 +77,16 @@ namespace Dac.Net.Db
                 {
                     var type = row.Field<string>("Type");
                     var length = 0;
-                    // let length = parseInt((type.match(/\(([0-9]+)\)/) || [])[1] || 0, 10);
-                    // type = type.replace(/\([0-9]+\)/, '');
+                  //  let length = parseInt((type.match(/\(([0-9]+)\)/) || [])[1] || 0, 10);
+                  //  type = type.replace(/\([0-9]+\)/, '');
 
+                    var m = Regex.Match(type, @"\(([0-9]+)\)");
+                    if (m.Success)
+                    {
+                        int.TryParse(m.Groups[1].Value, out length);
+                        type = Regex.Replace(type, @"\(([0-9]+)\)", "");
+                    }
+                    
                     if (type == "int")
                     {
                         length = 0;
@@ -169,18 +177,19 @@ namespace Dac.Net.Db
                 {
 
                     var indexName = row.Field<string>("Key_name");
-                    /*     if (fkNames.Contains(indexName) && checkDiff) {
-                             // ignore when same name foreign key exists
-                             continue;
-                         }
-                     */
-                    var nonUnique = row.Field<string>("Non_unique");
+                    if (fkNames.Contains(indexName))
+                    {
+                        // ignore when same name foreign key exists
+                        continue;
+                    }
+
+                    var nonUnique = row.Field<long>("Non_unique");
                     var collation = row.Field<string>("Collation");
                     if (!table.Indices.ContainsKey(indexName))
                     {
                         tables[tableName].Indices.Add(indexName, new Index()
                         {
-                            Unique = nonUnique == "0"
+                            Unique = nonUnique == 0
                         });
                     }
 
@@ -331,7 +340,7 @@ namespace Dac.Net.Db
                     var notNull = (newColumn.NotNull ?? false) ? " NOT NULL " : " NULL ";
                     var def = !string.IsNullOrWhiteSpace(newColumn.Default) ? $" DEFAULT {newColumn.Default} " : "";
                     var type = ((newColumn.Id ?? false) ? "int" : newColumn.Type) +
-                               (newColumn.LengthInt > 0 ? $"({newColumn.Length})" : "");
+                               (newColumn.LengthInt > 0 && !string.IsNullOrWhiteSpace(newColumn.Length) ? $"({newColumn.Length})" : "");
                     var check = !string.IsNullOrWhiteSpace(newColumn.Check) ? $" CHECK({newColumn.Check}) " : "";
 
                     query.AppendLine(
@@ -547,7 +556,7 @@ namespace Dac.Net.Db
             {
 
                 query.AppendLine($"CREATE TABLE `{tableName}` (");
-                var columnQuery = new StringBuilder();
+                var columnQuery = new List<string>();
                 var pk = new List<string>();
 
                 foreach (var (columnName, column) in table.Columns)
@@ -560,11 +569,11 @@ namespace Dac.Net.Db
                     }
 
                     var notNull = (column.NotNull ?? false) ? " NOT NULL " : "";
-                    var check = !string.IsNullOrWhiteSpace(column.Check) ? $") CHECK({column.Check}) " : "";
-                    var def = !string.IsNullOrWhiteSpace(column.Default) ? $") DEFAULT {column.Default} " : "";
-                    var type = column.Type + (column.LengthInt > 0 ? $"({column.Length})" : "");
+                    var check = !string.IsNullOrWhiteSpace(column.Check) ? $" CHECK({column.Check}) " : "";
+                    var def = !string.IsNullOrWhiteSpace(column.Default) ? $" DEFAULT {column.Default} " : "";
+                    var type = column.Type + (column.LengthInt > 0 && !string.IsNullOrWhiteSpace(column.Length) ? $"({column.Length})" : "");
 
-                    columnQuery.AppendLine(
+                    columnQuery.Add(
                         $"    `{columnName}` {type}{((column.Id ?? false) ? " AUTO_INCREMENT " : "")}{notNull}{def}{check}");
                     if ((column.Pk ?? false) || (column.Id ?? false))
                     {
@@ -572,7 +581,7 @@ namespace Dac.Net.Db
                     }
                 }
 
-                query.AppendLine(columnQuery + (pk.Any() ? "," : ""));
+                query.AppendLine(string.Join(",\n", columnQuery) + (pk.Any() ? "," : ""));
 
                 if (pk.Any())
                 {
@@ -586,7 +595,7 @@ namespace Dac.Net.Db
                 foreach (var (indexName, index) in table.Indices)
                 {
                     indexQuery.AppendLine(
-                        $"    {((index.Unique ?? false) ? "UNIQUE " : "")}{((index.Type ?? "").ToLower() == "fulltext" ? "FULLTEXT " : "")}INDEX `{indexName}`)({string.Join(",", index.Columns.Select(x => $"`{x.Key}` {x.Value}"))})");
+                        $"    {((index.Unique ?? false) ? "UNIQUE " : "")}{((index.Type ?? "").ToLower() == "fulltext" ? "FULLTEXT " : "")}INDEX `{indexName}`({string.Join(",", index.Columns.Select(x => $"`{x.Key}` {x.Value}"))})");
                 }
 
                 query.AppendLine(indexQuery.ToString());
@@ -650,7 +659,7 @@ namespace Dac.Net.Db
         */
 
             return
-                $"ALTER TABLE `{table}` ADD CONSTRAINT `{name}` FOREIGN KEY (`${column}`) REFERENCES `{targetTable}`(`${targetColumn}`){onupdate}{ondelete};";
+                $"ALTER TABLE `{table}` ADD CONSTRAINT `{name}` FOREIGN KEY (`{column}`) REFERENCES `{targetTable}`(`{targetColumn}`){onupdate}{ondelete};";
         }
     }
 
