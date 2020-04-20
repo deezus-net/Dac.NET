@@ -1,0 +1,50 @@
+tables:
+  users:
+    columns:
+      id:
+        id: true
+      name:
+        type: varchar
+        length: 100
+        notNull: true
+        check: name != 'test'
+  #    address:
+  #      type: nvarchar
+  #      length: max
+      group_id:
+        type: int
+        notNull: true
+        foreignKeys:
+          fk_groups:
+            table: groups
+            column: id
+      modified:
+        type: timestamp
+        notNull: true
+      created:
+        type: timestamp
+        notNull: true
+        default: NOW()
+    indices:
+      IX_name:
+        columns:
+          name: asc
+
+  
+  groups:
+    columns:
+      id:
+        id: true
+      name:
+        type: varchar
+        length: 150
+        notNull: true
+  configs:
+    columns:
+      id:
+        id: true
+      value:
+        type: varchar
+        length: 30
+        notNull: true
+    

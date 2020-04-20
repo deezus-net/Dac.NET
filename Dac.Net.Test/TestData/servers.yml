@@ -1,0 +1,20 @@
+mssql:
+  type: mssql
+  host: 127.0.0.1
+  user: sa
+  password: '!Passw0rd'
+  database: dac
+
+mysql:
+  type: mysql
+  host: 127.0.0.1
+  user: dac
+  password: dac
+  database: dac
+
+pgsql:
+  type: pgsql
+  host: 127.0.0.1
+  user: dac
+  password: dac
+  database: dac
