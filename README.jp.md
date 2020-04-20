@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/deezus-net/dac/tree/master.svg?style=svg)](https://circleci.com/gh/deezus-net/dac/tree/master)
+![](https://github.com/deezus-net/Dac.Net/workflows/test/badge.svg)
 # DAC
 DAC(Database As Codeの略)はデータベースのテーブル構造をyamlで管理するツールです  
 

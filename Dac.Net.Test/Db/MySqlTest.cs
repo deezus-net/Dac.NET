@@ -57,10 +57,12 @@ namespace Dac.Net.Test.Db
         public void ExtractTest()
         {
             var server = Utility.LoadServers("TestData/servers.yml")["mysql"];
+            var db = Utility.LoadDataBase("TestData/mysql.yml");
             var sql = new Net.Db.MySql(server);
             var res = sql.Connect();
-            var db = sql.Extract();
-            var yaml = Utility.DataBaseToYaml(db);
+            sql.ReCreate(db, false);
+            var extract = sql.Extract();
+            var yaml = Utility.DataBaseToYaml(extract);
             _output.WriteLine(yaml);
             Assert.NotEmpty(db.Tables);
         }
