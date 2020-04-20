@@ -23,18 +23,19 @@ namespace Dac.Net.Test.Db
             Assert.True(res);
         }
         
-/*        [Fact]
-        public void ExtractTest()
+        [Fact]
+        public void DropTest()
         {
             var server = Utility.LoadServers("TestData/servers.yml")["mysql"];
+            var db = Utility.LoadDataBase("TestData/mysql.yml");
+            Utility.TrimDataBaseProperties(db);
+            
             var sql = new Net.Db.MySql(server);
             var res = sql.Connect();
-            var db = sql.Extract();
-            var yaml = Utility.DataBaseToYaml(db);
-            _output.WriteLine(yaml);
-            Assert.NotEmpty(db.Tables);
+            var query = sql.Drop(db, false);
+            _output.WriteLine(query);
+            Assert.False(string.IsNullOrWhiteSpace(query));
         }
-        
         
         [Fact]
         public void CreateTest()
@@ -49,6 +50,18 @@ namespace Dac.Net.Test.Db
             Assert.False(string.IsNullOrWhiteSpace(query));
         }
         
+        [Fact]
+        public void ExtractTest()
+        {
+            var server = Utility.LoadServers("TestData/servers.yml")["mysql"];
+            var sql = new Net.Db.MySql(server);
+            var res = sql.Connect();
+            var db = sql.Extract();
+            var yaml = Utility.DataBaseToYaml(db);
+            _output.WriteLine(yaml);
+            Assert.NotEmpty(db.Tables);
+        }
+
         [Fact]
         public void ReCreateTest()
         {
@@ -89,19 +102,7 @@ namespace Dac.Net.Test.Db
             Assert.False(string.IsNullOrWhiteSpace(query));
         }
         
-        [Fact]
-        public void DropTest()
-        {
-            var server = Utility.LoadServers("TestData/servers.yml")["mysql"];
-            var db = Utility.LoadDataBase("TestData/mysql.yml");
-            Utility.TrimDataBaseProperties(db);
-            
-            var sql = new Net.Db.MySql(server);
-            var res = sql.Connect();
-            var query = sql.Drop(db, true);
-            _output.WriteLine(query);
-            Assert.False(string.IsNullOrWhiteSpace(query));
-        }
+     
         
         [Fact]
         public void QueryTest()
@@ -114,6 +115,6 @@ namespace Dac.Net.Test.Db
             var query = sql.Query(db);
             _output.WriteLine(query);
             Assert.False(string.IsNullOrWhiteSpace(query));
-        }*/
+        }
     }
 }

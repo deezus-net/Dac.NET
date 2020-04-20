@@ -25,6 +25,20 @@ namespace Dac.Net.Test.Db
         }
         
         [Fact]
+        public void DropTest()
+        {
+            var server = Utility.LoadServers("TestData/servers.yml")["pgsql"];
+            var db = Utility.LoadDataBase("TestData/pgsql.yml");
+            Utility.TrimDataBaseProperties(db);
+            
+            var sql = new PgSql(server);
+            var res = sql.Connect();
+            var query = sql.Drop(db, false);
+            _output.WriteLine(query);
+            Assert.False(string.IsNullOrWhiteSpace(query));
+        }
+        
+        [Fact]
         public void CreateTest()
         {
             var server = Utility.LoadServers("TestData/servers.yml")["pgsql"];
@@ -92,19 +106,7 @@ namespace Dac.Net.Test.Db
             Assert.False(string.IsNullOrWhiteSpace(query));
         }
         
-        [Fact]
-        public void DropTest()
-        {
-            var server = Utility.LoadServers("TestData/servers.yml")["pgsql"];
-            var db = Utility.LoadDataBase("TestData/pgsql.yml");
-            Utility.TrimDataBaseProperties(db);
-            
-            var sql = new PgSql(server);
-            var res = sql.Connect();
-            var query = sql.Drop(db, true);
-            _output.WriteLine(query);
-            Assert.False(string.IsNullOrWhiteSpace(query));
-        }
+        
         
         [Fact]
         public void QueryTest()
