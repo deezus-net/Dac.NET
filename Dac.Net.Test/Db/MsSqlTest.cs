@@ -83,10 +83,14 @@ namespace Dac.Net.Test.Db
         {
             var server = Utility.LoadServers("TestData/servers.yml")["mssql"];
             var db = Utility.LoadDataBase("TestData/mssql.yml");
-            Utility.TrimDataBaseProperties(db);
+            
+            
+            
                 
             var sql = new MsSql(server);
             var res = sql.Connect();
+            sql.ReCreate(db, false);
+            Utility.TrimDataBaseProperties(db);
             var diff = sql.Diff(db);
             Assert.False(diff.HasDiff);
         }
