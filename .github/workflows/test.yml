@@ -4,33 +4,33 @@ on:
     branches:
       - develop
 jobs:
-  services:
-    mysql:
-      image: mysql:5
-      environment:
-        MYSQL_RANDOM_ROOT_PASSWORD: 1
-        MYSQL_DATABASE: dac
-        MYSQL_USER: dac
-        MYSQL_PASSWORD: dac
-      ports:
-        - "3306:3306"
-    postgres:
-      image: postgres
-      environment:
-        POSTGRES_USER: dac
-        POSTGRES_PASSWORD: dac
-        POSTGRES_DB: dac
-      ports:
-        - "5432:5432"
-    mssql:
-      image: mcr.microsoft.com/mssql/server
-      environment:
-        ACCEPT_EULA: Y
-        SA_PASSWORD: "!Passw0rd"
-      ports:
-        - "1433:1433"  
   build:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:5
+        environment:
+          MYSQL_RANDOM_ROOT_PASSWORD: 1
+          MYSQL_DATABASE: dac
+          MYSQL_USER: dac
+          MYSQL_PASSWORD: dac
+        ports:
+          - "3306:3306"
+      postgres:
+        image: postgres
+        environment:
+          POSTGRES_USER: dac
+          POSTGRES_PASSWORD: dac
+          POSTGRES_DB: dac
+        ports:
+          - "5432:5432"
+      mssql:
+        image: mcr.microsoft.com/mssql/server
+        environment:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: "!Passw0rd"
+        ports:
+          - "1433:1433"  
     steps:
       - name: dotnet build
         uses: docker://mcr.microsoft.com/dotnet/core/sdk:3.1
