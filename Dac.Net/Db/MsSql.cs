@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Channels;
 using Dac.Net.Core;
 using Microsoft.Data.SqlClient;
+using Microsoft.VisualBasic;
 
 namespace Dac.Net.Db
 {
@@ -379,8 +380,35 @@ namespace Dac.Net.Db
 
 
             }
+            
+            // synonyms
+            var synonyms = new Dictionary<string, Synonym>();
+            query = @"
+                    SELECT
+                        name,
+                        base_object_name
+                    FROM
+                        sys.synonyms
+            ";
+            foreach (DataRow row in GetResult(query).Rows)
+            {
+                
+                var tmp = row.Field<string>("base_object_name").Split(".");
+                if (tmp.Length == 3)
+                {
+                    var synonym = new Synonym
+                    {
+                        Database = tmp[0].Replace("[", "").Replace("]", ""),
+                        Schema = tmp[1].Replace("[", "").Replace("]", ""),
+                        Object = tmp[2].Replace("[", "").Replace("]", "")
+                    };
+                    synonyms.Add(row.Field<string>("name"), synonym);
+                    
+                }
+                
+            }
 
-            var db = new DataBase() {Tables = tables};
+            var db = new DataBase() {Tables = tables, Synonyms = synonyms};
             Utility.TrimDataBaseProperties(db);
             return db;
         }
@@ -475,7 +503,20 @@ namespace Dac.Net.Db
             {
                 queries.AppendLine($"DROP TABLE [{tableName}];");
             }
-
+            
+            // drop synonyms
+            query = @"
+                    SELECT
+                        name
+                    FROM
+                        sys.synonyms
+            ";
+            foreach (DataRow row in GetResult(query).Rows)
+            {
+                queries.AppendLine($"DROP SYNONYM [{row.Field<string>("name")}];");
+            }
+            
+            
             queries.AppendLine(CreateQuery(db));
 
             var result = queries.ToString();
@@ -696,6 +737,23 @@ namespace Dac.Net.Db
                     query.AppendLine($"DROP TABLE [dbo].[{tableName}];");
                 }
             }
+            
+            // add synonym
+            query.AppendLine(CreateQuery(new DataBase() {Synonyms = diff.AddedSynonyms}));
+            
+            // drop synonyms
+            foreach (var synonymName in diff.DeletedSynonymNames)
+            {
+                query.AppendLine($"DROP SYNONYM [{synonymName}];");
+            }
+            
+            // modified synonyms
+            foreach (var (synonymName, synonyms) in diff.ModifiedSynonyms)
+            {
+                query.AppendLine($"DROP SYNONYM [{synonymName}];");
+                query.AppendLine(CreateQuery(new DataBase()
+                    {Synonyms = new Dictionary<string, Synonym>() {{synonymName, synonyms[1]}}}));
+            }
 
             var result = string.Join("\n", dropFkQuery) + "\n" + query.ToString() + "\n" +
                          string.Join("\n", createFkQuery);
@@ -793,7 +851,7 @@ namespace Dac.Net.Db
             var query = new StringBuilder();
             var fkQuery = new StringBuilder();
 
-            foreach (var (tableName, table) in db.Tables)
+            foreach (var (tableName, table) in (db.Tables ?? new Dictionary<string, Table>()))
             {
                 query.AppendLine($"CREATE TABLE [dbo].[{tableName}](");
                 var columnQuery = new List<string>();
@@ -864,7 +922,31 @@ namespace Dac.Net.Db
 
             }
 
-            return $"{query}\n{fkQuery}";
+            var synonymQuery = new StringBuilder();
+            foreach (var (synonymName, synonym) in (db.Synonyms ?? new Dictionary<string, Synonym>()))
+            {
+                var objectName = $"{((!string.IsNullOrWhiteSpace(synonym.Database) ? $"[{synonym.Database}]." : ""))}" +
+                                 $"{((!string.IsNullOrWhiteSpace(synonym.Schema) ? $"[{synonym.Schema}]." : ""))}" +
+                                 $"[{synonym.Object}]";
+                synonymQuery.AppendLine($"CREATE SYNONYM [{synonymName}] FOR {objectName};");
+            }
+
+            return $"{query}\n{fkQuery}\n{synonymQuery}";
+        }
+
+        
+        private string CreateSynonymQuery(Dictionary<string, Synonym> synonyms)
+        {
+            var query = new StringBuilder();
+            foreach (var (synonymName, synonym) in (synonyms ?? new Dictionary<string, Synonym>()))
+            {
+                var objectName = $"{((!string.IsNullOrWhiteSpace(synonym.Database) ? $"[{synonym.Database}]." : ""))}" +
+                                 $"{((!string.IsNullOrWhiteSpace(synonym.Schema) ? $"[{synonym.Schema}]." : ""))}" +
+                                 $"[{synonym.Object}]";
+                query.AppendLine($"CREATE SYNONYM [{synonymName}] FOR {objectName}");
+            }
+
+            return query.ToString();
         }
 
         /// <summary>

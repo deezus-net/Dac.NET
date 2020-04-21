@@ -54,4 +54,8 @@ tables:
         type: nvarchar
         length: 30
         notNull: true
-    
+synonyms:
+  spt_monitor:
+    database: master
+    schema: dbo
+    object: users

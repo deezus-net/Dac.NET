@@ -7,9 +7,14 @@ namespace Dac.Net.Db
     public class Diff
     {
         public Dictionary<string, Table> AddedTables { get; set; } = new Dictionary<string, Table>();
-
         public List<string> DeletedTableNames { get; set; } = new List<string>();
         public Dictionary<string, ModifiedTable> ModifiedTables { get; set; } = new Dictionary<string, ModifiedTable>();
+        
+        public Dictionary<string, Synonym> AddedSynonyms { get; set; } = new Dictionary<string, Synonym>();
+        public List<string> DeletedSynonymNames { get; set; } = new List<string>();
+        public Dictionary<string, Synonym[]> ModifiedSynonyms { get; set; } = new Dictionary<string, Synonym[]>();
+        
+        
         public DataBase CurrentDb { get; set; }
         public DataBase NewDb { get; set; }
 
@@ -61,7 +66,8 @@ namespace Dac.Net.Db
                         else if (!CurrentDb.Tables[tableName].Columns.ContainsKey(columnName))
                         {
                             InitModifiedTable(tableName);
-                            ModifiedTables[tableName].AddedColumns.Add(columnName, NewDb.Tables[tableName].Columns[columnName]);
+                            ModifiedTables[tableName].AddedColumns
+                                .Add(columnName, NewDb.Tables[tableName].Columns[columnName]);
 
                         }
                         else if (!CurrentDb.Tables[tableName].Columns[columnName]
@@ -79,7 +85,7 @@ namespace Dac.Net.Db
                     // indexes
                     var currentIndices = CurrentDb.Tables[tableName].Indices ?? new Dictionary<string, Index>();
                     var newIndices = NewDb.Tables[tableName].Indices ?? new Dictionary<string, Index>();
-                    
+
                     var indexNames = currentIndices.Keys.Concat(newIndices.Keys).Distinct();
 
                     foreach (var indexName in indexNames)
@@ -100,7 +106,7 @@ namespace Dac.Net.Db
                             .Equals(currentIndices[indexName]))
                         {
                             InitModifiedTable(tableName);
-                      //     NewDb.Tables[tableName].Indices[indexName].Name = indexName;
+                            //     NewDb.Tables[tableName].Indices[indexName].Name = indexName;
                             ModifiedTables[tableName].ModifiedIndices[indexName] = new[]
                             {
                                 currentIndices[indexName],
@@ -114,7 +120,30 @@ namespace Dac.Net.Db
 
             }
 
+            // synonyms
+            var synonymNames = CurrentDb.Synonyms.Keys.Concat(NewDb.Synonyms.Keys).Distinct();
+            foreach (var synonymName in synonymNames)
+            {
+                if (!NewDb.Synonyms.ContainsKey(synonymName))
+                {
+                    DeletedSynonymNames.Add(synonymName);
+                }
+                else if (!CurrentDb.Synonyms.ContainsKey(synonymName))
+                {
+                    AddedSynonyms.Add(synonymName, NewDb.Synonyms[synonymName]);
+                }
+                else if (!CurrentDb.Synonyms[synonymName].Equals(NewDb.Synonyms[synonymName]))
+                {
+                    ModifiedSynonyms.Add(synonymName, new[]
+                    {
+                        CurrentDb.Synonyms[synonymName],
+                        NewDb.Synonyms[synonymName]
+                    });
+                }
+            }
         }
+
+
 
         private void InitModifiedTable(string tableName)
         {

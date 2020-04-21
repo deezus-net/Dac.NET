@@ -43,15 +43,15 @@ namespace Dac.Net.Core
         /// <returns></returns>
         public static DataBase LoadDataBase(string file)
         {
-            try
-            {
+          //  try
+          //  {
                 var yml = File.ReadAllText(file);
                 return Deserializer.Deserialize<DataBase>(yml);
-            }
-            catch (Exception e)
-            {
+           // }
+           // catch (Exception e)
+           // {
 
-            }
+           // }
 
             return null;
         }
