@@ -186,7 +186,7 @@ namespace Dac.Net.Core
                         OutPut?.Invoke($"      type: {orgIndex.Type} -> {newIndex.Type}");
                         //   console.log(`      columns: ${orgIndexColumns} -> ${indexColumns}`);
                     }
-                    
+
                     var orgIndexColumns = string.Join(",", orgIndex.Columns.Select(x => $"{x.Key} {x.Value}"));
                     var newIndexColumns = string.Join(",", newIndex.Columns.Select(x => $"{x.Key} {x.Value}"));
                     if (orgIndexColumns != newIndexColumns)
@@ -203,6 +203,38 @@ namespace Dac.Net.Core
 
                 }
             }
+
+
+            foreach (var (synonymName, synonym) in diff.AddedSynonyms)
+            {
+                //  console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `+ ${tableName}`);
+                OutPut?.Invoke($"+ {synonymName}");
+            }
+
+            foreach (var synonymName in diff.DeletedSynonymNames)
+            {
+                OutPut?.Invoke($"- {synonymName}");
+                //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
+            }
+            
+            foreach (var (synonymName, synonyms) in diff.ModifiedSynonyms)
+            {
+                OutPut?.Invoke($"# {synonymName}");
+                if (synonyms[0].Database != synonyms[1].Database)
+                {
+                    OutPut?.Invoke($"  database: {synonyms[0].Database} -> {synonyms[1].Database}");
+                }
+                if (synonyms[0].Schema != synonyms[1].Schema)
+                {
+                    OutPut?.Invoke($"  schema: {synonyms[0].Schema} -> {synonyms[1].Schema}");
+                }
+                if (synonyms[0].Object != synonyms[1].Object)
+                {
+                    OutPut?.Invoke($"  object: {synonyms[0].Object} -> {synonyms[1].Object}");
+                }
+                //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
+            }
+
         }
 
         /// <summary>
