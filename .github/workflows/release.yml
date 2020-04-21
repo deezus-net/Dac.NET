@@ -1,0 +1,31 @@
+name: release
+on: 
+  push:
+    tags:
+      - v*
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: dotnet build
+        uses: docker://mcr.microsoft.com/dotnet/core/sdk:3.1
+      - name: info
+        run: dotnet --info
+      - name: ls
+        run: ls -la
+      - name: windows
+        run: dotnet publish -c release -r win-x64 -o windows
+    - name: release
+      uses: docker://antonyurchenko/git-release:latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        DRAFT_RELEASE: "false"
+        PRE_RELEASE: "false"
+        ALLOW_EMPTY_CHANGELOG: "true"
+        ALLOW_TAG_PREFIX: "true"
+      with:
+        args: |
+            windows/dac.exe
+      
