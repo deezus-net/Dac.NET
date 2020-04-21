@@ -12,7 +12,7 @@ namespace Dac.Net.Test.Core
         {
             _output = output;
         }
-
+/*
         [Fact]
         public void ExtractTest()
         {
@@ -51,6 +51,6 @@ namespace Dac.Net.Test.Core
             var main = new Main("diff", "-f", "TestData/servers.yml", "-i", "TestData/mssql.yml", "-H", "mssql")
                 {OutPut = _output.WriteLine};
             main.Run();
-        }
+        }*/
     }
 }
