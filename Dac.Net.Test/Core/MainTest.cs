@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Dac.Net.Core;
 using Xunit;
@@ -12,7 +13,22 @@ namespace Dac.Net.Test.Core
         {
             _output = output;
         }
-/*
+
+     /*   [Fact]
+        public void ArgTest()
+        {
+            try
+            {
+                var main = new Main("create", "-i", "TestData/servers.yml")
+                    {OutPut = _output.WriteLine};
+                main.Run();
+            }
+            catch (Exception e)
+            {
+                _output.WriteLine(e.Message);
+            }
+        }
+
         [Fact]
         public void ExtractTest()
         {

@@ -8,8 +8,15 @@ namespace Dac.Net
     {
         static void Main(string[] args)
         {
-            var core = new Main(args) {OutPut = Console.WriteLine};
-            core.Run();
+            try
+            {
+                var core = new Main(args) {OutPut = Console.WriteLine};
+                core.Run();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
     }
 }

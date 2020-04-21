@@ -17,6 +17,12 @@ namespace Dac.Net.Core
 
         public void Run()
         {
+            if (!_commandLine.Check())
+            {
+                OutPut?.Invoke(_commandLine.ErrorMessage);
+                return;
+            }
+            
             foreach (var server in _commandLine.Servers)
             {
                 IDb db = null;
