@@ -10,6 +10,10 @@
         <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
         <OutputType>Exe</OutputType>
         <PublishSingleFile>true</PublishSingleFile>
+     
+     <!--   <PackAsTool>true</PackAsTool>
+        <ToolCommandName>dac</ToolCommandName>
+        <PackageOutputPath>./nupkg</PackageOutputPath> -->
     </PropertyGroup>
 
     <ItemGroup>
