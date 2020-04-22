@@ -29,13 +29,13 @@ namespace Dac.Net.Core
                 switch (server.Type)
                 {
                     case Define.DatabaseType.Mysql:
-                        db = new Db.MySql(server);
+                        db = new Db.MySql(server, _commandLine.DryRun);
                         break;
                     case Define.DatabaseType.Postgres:
-                        db = new PgSql(server);
+                        db = new PgSql(server, _commandLine.DryRun);
                         break;
                     case Define.DatabaseType.MsSql:
-                        db = new MsSql(server);
+                        db = new MsSql(server, _commandLine.DryRun);
                         break;
                 }
 
@@ -77,9 +77,31 @@ namespace Dac.Net.Core
         private void Create(IDb db)
         {
             db?.Connect();
-            var query = db?.Create(_commandLine.DataBase, _commandLine.Query);
+            var result = db?.Create(_commandLine.DataBase, _commandLine.Query);
             db?.Close();
-            OutPut?.Invoke(query);
+            
+            if (result.Success)
+            {
+                if(_commandLine.Query)
+                {
+                    OutPut?.Invoke($"{result.Query}");
+                }
+                else if(_commandLine.DryRun)
+                {
+                    OutPut?.Invoke("create is success (dry run)");
+                }
+                else
+                {
+                    OutPut?.Invoke("create is success");
+                }
+            }
+            else
+            {
+                OutPut?.Invoke("create is failed");
+                OutPut?.Invoke($"{result.Exception.Message}");
+                OutPut?.Invoke("-------------------------");
+                OutPut?.Invoke($"{result.Query}");
+            }
             
         }
 
@@ -93,8 +115,9 @@ namespace Dac.Net.Core
             var diff = db?.Diff(_commandLine.DataBase);
             db?.Close();
 
-            if (diff == null)
+            if (!diff.HasDiff)
             {
+                OutPut?.Invoke("no difference");
                 return;
             }
 
@@ -261,9 +284,31 @@ namespace Dac.Net.Core
         private void Drop(IDb db)
         {
             db?.Connect();
-            var query = db?.Drop(_commandLine.DataBase, _commandLine.Query);
-            db.Close();
-            OutPut?.Invoke(query);
+            var result = db?.Drop(_commandLine.DataBase, _commandLine.Query);
+            db?.Close();
+            
+            if (result.Success)
+            {
+                if(_commandLine.Query)
+                {
+                    OutPut?.Invoke($"{result.Query}");
+                }
+                else if(_commandLine.DryRun)
+                {
+                    OutPut?.Invoke("drop is success (dry run)");
+                }
+                else
+                {
+                    OutPut?.Invoke("drop is success");
+                }
+            }
+            else
+            {
+                OutPut?.Invoke("drop is failed");
+                OutPut?.Invoke($"{result.Exception.Message}");
+                OutPut?.Invoke("-------------------------");
+                OutPut?.Invoke($"{result.Query}");
+            }
         }
 
         /// <summary>
@@ -319,9 +364,34 @@ namespace Dac.Net.Core
         private void Update(IDb db)
         {
             db?.Connect();
-            var query = db?.Update(_commandLine.DataBase, _commandLine.Query, _commandLine.Drop);
+            var result = db?.Update(_commandLine.DataBase, _commandLine.Query, _commandLine.Drop);
             db?.Close();
-            OutPut?.Invoke(query);
+            if (result.Success)
+            {
+                if (string.IsNullOrWhiteSpace(result.Query))
+                {
+                    OutPut?.Invoke($"nothing to do");
+                }
+                else if(_commandLine.Query)
+                {
+                    OutPut?.Invoke($"{result.Query}");
+                }
+                else if(_commandLine.DryRun)
+                {
+                    OutPut?.Invoke("update is success (dry run)");
+                }
+                else
+                {
+                    OutPut?.Invoke("update is success");
+                }
+            }
+            else
+            {
+                OutPut?.Invoke("update is failed");
+                OutPut?.Invoke($"{result.Exception.Message}");
+                OutPut?.Invoke("-------------------------");
+                OutPut?.Invoke($"{result.Query}");
+            }
         }
 
         /// <summary>
@@ -331,9 +401,30 @@ namespace Dac.Net.Core
         private void ReCreate(IDb db)
         {
             db?.Connect();
-            var query = db?.ReCreate(_commandLine.DataBase, _commandLine.Query);
+            var result = db?.ReCreate(_commandLine.DataBase, _commandLine.Query);
             db?.Close();
-            OutPut?.Invoke(query);
+            if (result.Success)
+            {
+                if(_commandLine.Query)
+                {
+                    OutPut?.Invoke($"{result.Query}");
+                }
+                else if(_commandLine.DryRun)
+                {
+                    OutPut?.Invoke("recreate is success (dry run)");
+                }
+                else
+                {
+                    OutPut?.Invoke("recreate is success");
+                }
+            }
+            else
+            {
+                OutPut?.Invoke("recreate is failed");
+                OutPut?.Invoke($"{result.Exception.Message}");
+                OutPut?.Invoke("-------------------------");
+                OutPut?.Invoke($"{result.Query}");
+            }
         }
     }
 }

@@ -5,10 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Dac.Net.Core;
-using Microsoft.Data.SqlClient;
-using MySql.Data.MySqlClient.X.XDevAPI.Common;
 using Npgsql;
-using Ubiety.Dns.Core.Records.NotUsed;
 
 namespace Dac.Net.Db
 {
@@ -17,38 +14,31 @@ namespace Dac.Net.Db
 
         private readonly Server _server;
         private NpgsqlConnection _npgsqlConnection;
+        private readonly bool _dryRun = false;
 
-        public PgSql(Server server)
+        public PgSql(Server server, bool dryRun)
         {
             _server = server;
+            _dryRun = dryRun;
         }
 
-        public string Drop(DataBase db, bool queryOnly)
+        public QueryResult Drop(DataBase db, bool queryOnly)
         {
+            var queryResult = new QueryResult();
             var queries = new StringBuilder();
             foreach (var (tableName, table) in db.Tables)
             {
                 queries.AppendLine($"DROP TABLE IF EXISTS \"{tableName}\" CASCADE;");
             }
 
-            var result = queries.ToString();
+            queryResult.Query = queries.ToString();
 
             if (queryOnly)
             {
-                return result;
+                return queryResult;
             }
-
-            using (var trn = _npgsqlConnection.BeginTransaction())
-            {
-                using (var cmd = new NpgsqlCommand(result, trn.Connection, trn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-
-                trn.Commit();
-            }
-
-            return result;
+            Transaction(queryResult);
+            return queryResult;
         }
 
         /// <summary>
@@ -332,24 +322,19 @@ namespace Dac.Net.Db
         /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>
-        public string Create(DataBase db, bool queryOnly)
+        public QueryResult Create(DataBase db, bool queryOnly)
         {
-            var query = CreateQuery(db);
-            if (!queryOnly)
+            var queryResult = new QueryResult()
             {
-                using (var trn = _npgsqlConnection.BeginTransaction())
-                {
-                    using (var cmd = new NpgsqlCommand(query, trn.Connection, trn))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    trn.Commit();
-
-                }
+                Query = CreateQuery(db)
+            };
+            if (queryOnly)
+            {
+                return queryResult;
             }
-
-            return query;
+            
+            Transaction(queryResult);
+            return queryResult;
 
         }
 
@@ -359,8 +344,10 @@ namespace Dac.Net.Db
         /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>
-        public string ReCreate(DataBase db, bool queryOnly)
+        public QueryResult ReCreate(DataBase db, bool queryOnly)
         {
+            var queryResult = new QueryResult();
+            
             var query = new StringBuilder();
             var tables = new Dictionary<string, Table>();
             foreach (DataRow row in GetResult("SELECT relname FROM \"pg_stat_user_tables\" WHERE schemaname='public'")
@@ -371,29 +358,26 @@ namespace Dac.Net.Db
 
             query.AppendLine(CreateQuery(db));
 
-            var result = query.ToString();
+            queryResult.Query = query.ToString();
             if (queryOnly)
             {
-                return result;
+                return queryResult;
             }
 
-            using (var trn = _npgsqlConnection.BeginTransaction())
-            {
-                using (var cmd = new NpgsqlCommand(result, trn.Connection, trn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-
-                trn.Commit();
-            }
-
-            return result;
+            Transaction(queryResult);
+            return queryResult;
 
         }
 
-        public string Update(DataBase db, bool queryOnly, bool dropTable)
+        public QueryResult Update(DataBase db, bool queryOnly, bool dropTable)
         {
+            var queryResult = new QueryResult();
             var diff = Diff(db);
+            if (!diff.HasDiff)
+            {
+                return queryResult;
+            }
+
             var query = new StringBuilder();
             var createFkQuery = new List<string>();
             var dropFkQuery = new List<string>();
@@ -559,26 +543,15 @@ namespace Dac.Net.Db
                 }
             }
 
-            var result = string.Join("\n", dropFkQuery) + '\n' + query.ToString() + '\n' +
+            queryResult.Query = string.Join("\n", dropFkQuery) + '\n' + query.ToString() + '\n' +
                          string.Join("\n", createFkQuery);
-            if (!string.IsNullOrWhiteSpace(result))
+            if (queryOnly)
             {
-                if (!queryOnly)
-                {
-                    using (var trn = _npgsqlConnection.BeginTransaction())
-                    {
-                        using (var cmd = new NpgsqlCommand(result, trn.Connection, trn))
-                        {
-                            cmd.ExecuteNonQuery();
-                        }
-
-                        trn.Commit();
-                    }
-                }
+                return queryResult;
             }
-
-            return result;
-
+            
+            Transaction(queryResult);
+            return queryResult;
         }
 
         /// <summary>
@@ -770,6 +743,40 @@ namespace Dac.Net.Db
 
             return
                 $"ALTER TABLE \"{table}\" ADD CONSTRAINT \"{name}\" FOREIGN KEY (\"{column}\") REFERENCES \"{targetTable}\"(\"{targetColumn}\"){onupdate}{ondelete};";
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="queryResult"></param>
+        private void Transaction(QueryResult queryResult)
+        {
+            using (var trn = _npgsqlConnection.BeginTransaction())
+            {
+                try
+                {
+                    using (var cmd = new NpgsqlCommand(queryResult.Query, trn.Connection, trn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                catch (Exception e)
+                {
+                    queryResult.Success = false;
+                    queryResult.Exception = e;
+                    trn.Rollback();
+                    return;
+                }
+
+                if (_dryRun)
+                {
+                    trn.Rollback();
+                }
+                else
+                {
+                    trn.Commit();
+                }
+            }
         }
     }
 }

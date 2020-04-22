@@ -16,14 +16,17 @@ namespace Dac.Net.Db
     {
         private readonly Server _server;
         private SqlConnection _sqlConnection;
+        private bool _dryRun = false;
 
-        public MsSql(Server server)
+        public MsSql(Server server, bool dryRun)
         {
             _server = server;
+            _dryRun = dryRun;
         }
 
-        public string Drop(DataBase db, bool queryOnly)
+        public QueryResult Drop(DataBase db, bool queryOnly)
         {
+            var queryResult = new QueryResult();
             var queries = new StringBuilder();
 
             const string query = @"
@@ -55,22 +58,15 @@ namespace Dac.Net.Db
                 queries.AppendLine($"DROP TABLE IF EXISTS [{tableName}];");
             }
 
-            var result = queries.ToString();
+            queryResult.Query = queries.ToString();
             if (queryOnly)
             {
-                return result;
+                return queryResult;
             }
+            
+            Transaction(queryResult);
+            return queryResult;
 
-            using (var trn = _sqlConnection.BeginTransaction())
-            {
-                using (var cmd = new SqlCommand(result, trn.Connection, trn))
-                {
-                    cmd.ExecuteNonQuery();
-                    trn.Commit();
-                }
-            }
-
-            return result;
         }
 
         /// <summary>
@@ -451,24 +447,20 @@ namespace Dac.Net.Db
         /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>
-        public string Create(DataBase db, bool queryOnly)
+        public QueryResult Create(DataBase db, bool queryOnly)
         {
+            var queryResult = new QueryResult();
             var queries = new StringBuilder();
             queries.AppendLine($"USE [{_server.Database}];");
             queries.AppendLine(CreateQuery(db));
-            var query = queries.ToString();
+            queryResult.Query = queries.ToString();
             if (queryOnly)
             {
-                return query;
+                return queryResult;
             }
 
-            using (var cmd = _sqlConnection.CreateCommand())
-            {
-                cmd.CommandText = query;
-                cmd.ExecuteNonQuery();
-            }
-
-            return query;
+            Transaction(queryResult);
+            return queryResult;
         }
 
         /// <summary>
@@ -477,8 +469,9 @@ namespace Dac.Net.Db
         /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>
-        public string ReCreate(DataBase db, bool queryOnly)
+        public QueryResult ReCreate(DataBase db, bool queryOnly)
         {
+            var queryResult = new QueryResult();
             var queries = new StringBuilder();
             queries.AppendLine($"USE [{_server.Database}];");
 
@@ -537,28 +530,16 @@ namespace Dac.Net.Db
             {
                 queries.AppendLine($"DROP SYNONYM [{row.Field<string>("name")}];");
             }
-            
-            
             queries.AppendLine(CreateQuery(db));
 
-            var result = queries.ToString();
+            queryResult.Query = queries.ToString();
             if (queryOnly)
             {
-                return result;
+                return queryResult;
             }
+            Transaction(queryResult);
 
-            using (var trn = _sqlConnection.BeginTransaction())
-            {
-                using (var cmd = new SqlCommand("", trn.Connection, trn))
-                {
-                    cmd.CommandText = result;
-                    cmd.ExecuteNonQuery();
-                }
-
-                trn.Commit();
-            }
-
-            return result;
+            return queryResult;
         }
 
         /// <summary>
@@ -568,9 +549,15 @@ namespace Dac.Net.Db
         /// <param name="queryOnly"></param>
         /// <param name="dropTable"></param>
         /// <returns></returns>
-        public string Update(DataBase db, bool queryOnly, bool dropTable)
+        public QueryResult Update(DataBase db, bool queryOnly, bool dropTable)
         {
+            var queryResult = new QueryResult();
             var diff = Diff(db);
+            if (!diff.HasDiff)
+            {
+                return queryResult;
+            }
+            
             var query = new StringBuilder();
             var createFkQuery = new List<string>();
             var dropFkQuery = new List<string>();
@@ -777,35 +764,16 @@ namespace Dac.Net.Db
                     {Synonyms = new Dictionary<string, Synonym>() {{synonymName, synonyms[1]}}}));
             }
 
-            var result = string.Join("\n", dropFkQuery) + "\n" + query.ToString() + "\n" +
+            queryResult.Query = string.Join("\n", dropFkQuery) + "\n" + query.ToString() + "\n" +
                          string.Join("\n", createFkQuery);
-
-            if (query.Length == 0 && !createFkQuery.Any() && !dropFkQuery.Any())
-            {
-                return null;
-            }
 
             if (queryOnly)
             {
-                return result;
+                return queryResult;
             }
 
-            using (var trn = _sqlConnection.BeginTransaction())
-            {
-                using (var cmd = new SqlCommand("", trn.Connection, trn))
-                {
-                    cmd.CommandText = result;
-                    cmd.ExecuteNonQuery();
-                }
-
-                trn.Commit();
-            }
-
-            return result;
-
-
-
-
+            Transaction(queryResult);
+            return queryResult;
         }
 
         /// <summary>
@@ -1098,10 +1066,44 @@ namespace Dac.Net.Db
                 }
             }
 
-            return query.ToString();
+            return $"{query};";
             
           //  return
           //      $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}{(!string.IsNullOrWhiteSpace(index.Type) ? index.Type + " " : "")}INDEX [{indexName}] ON [{tableName}]({string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});";
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="queryResult"></param>
+        private void Transaction(QueryResult queryResult)
+        {
+            using (var trn = _sqlConnection.BeginTransaction())
+            {
+                try
+                {
+                    using (var cmd = new SqlCommand(queryResult.Query, trn.Connection, trn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                catch (Exception e)
+                {
+                    queryResult.Success = false;
+                    queryResult.Exception = e;
+                    trn.Rollback();
+                    return;
+                }
+
+                if (_dryRun)
+                {
+                    trn.Rollback();
+                }
+                else
+                {
+                    trn.Commit();
+                }
+            }
         }
 
     }

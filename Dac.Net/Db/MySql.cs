@@ -14,10 +14,12 @@ namespace Dac.Net.Db
     {
         private readonly Server _server;
         private MySqlConnection _mySqlConnection;
+        private bool _dryRun = false;
 
-        public MySql(Server server)
+        public MySql(Server server, bool dryRun)
         {
             _server = server;
+            _dryRun = dryRun;
         }
 
         /// <summary>
@@ -26,35 +28,28 @@ namespace Dac.Net.Db
         /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>
-        public string Drop(DataBase db, bool queryOnly)
+        public QueryResult Drop(DataBase db, bool queryOnly)
         {
+            var queryResult = new QueryResult();
             var queries = new StringBuilder();
+
+            queries.AppendLine("SET FOREIGN_KEY_CHECKS = 0;");
             foreach (var (tableName, table) in db.Tables)
             {
                 queries.AppendLine($"DROP TABLE IF EXISTS `{tableName}`;");
             }
 
-            var result = queries.ToString();
+            queries.AppendLine("SET FOREIGN_KEY_CHECKS = 1;");
+
+            queryResult.Query = queries.ToString();
 
             if (queryOnly)
             {
-                return result;
+                return queryResult;
             }
 
-            using (var trn = _mySqlConnection.BeginTransaction())
-            {
-                var query = @$"SET FOREIGN_KEY_CHECKS = 0;
-                                          {result}
-                                          SET FOREIGN_KEY_CHECKS = 1;";
-                using (var cmd = new MySqlCommand(query, trn.Connection, trn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-
-                trn.Commit();
-            }
-
-            return result;
+            Transaction(queryResult);
+            return queryResult;
         }
 
         /// <summary>
@@ -228,24 +223,19 @@ namespace Dac.Net.Db
         /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>
-        public string Create(DataBase db, bool queryOnly)
+        public QueryResult Create(DataBase db, bool queryOnly)
         {
-            var query = CreateQuery(db);
-            if (!queryOnly)
+            var queryResult = new QueryResult
             {
-                using (var trn = _mySqlConnection.BeginTransaction())
-                {
-                    using (var cmd = new MySqlCommand(query, trn.Connection, trn))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    trn.Commit();
-
-                }
+                Query = CreateQuery(db)
+            };
+            if (queryOnly)
+            {
+                return queryResult;
             }
-
-            return query;
+            
+            Transaction(queryResult);
+            return queryResult;
         }
 
         /// <summary>
@@ -254,8 +244,9 @@ namespace Dac.Net.Db
         /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>
-        public string ReCreate(DataBase db, bool queryOnly)
+        public QueryResult ReCreate(DataBase db, bool queryOnly)
         {
+            var queryResult = new QueryResult();
             var tables = new List<string>();
             foreach (DataRow row in GetResult("show tables").Rows)
             {
@@ -272,30 +263,27 @@ namespace Dac.Net.Db
 
             query.AppendLine(CreateQuery(db));
 
-            var result = query.ToString();
+            queryResult.Query = query.ToString();
             if (queryOnly)
             {
-                return result;
+                return queryResult;
             }
-
-
-            using (var trn = _mySqlConnection.BeginTransaction())
-            {
-                using (var cmd = new MySqlCommand(result, trn.Connection, trn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-
-                trn.Commit();
-
-            }
-
-            return result;
+            
+            Transaction(queryResult);
+            return queryResult;
+            
         }
 
-        public string Update(DataBase db, bool queryOnly, bool dropTable)
+        public QueryResult Update(DataBase db, bool queryOnly, bool dropTable)
         {
+            var queryResult = new QueryResult();
             var diff = Diff(db);
+            if (!diff.HasDiff)
+            {
+                return queryResult;
+            }
+
+
             var orgDb = diff.CurrentDb;
             var query = new StringBuilder();
             var createFkQuery = new List<string>();
@@ -340,7 +328,9 @@ namespace Dac.Net.Db
                     var notNull = (newColumn.NotNull ?? false) ? " NOT NULL " : " NULL ";
                     var def = !string.IsNullOrWhiteSpace(newColumn.Default) ? $" DEFAULT {newColumn.Default} " : "";
                     var type = ((newColumn.Id ?? false) ? "int" : newColumn.Type) +
-                               (newColumn.LengthInt > 0 && !string.IsNullOrWhiteSpace(newColumn.Length) ? $"({newColumn.Length})" : "");
+                               (newColumn.LengthInt > 0 && !string.IsNullOrWhiteSpace(newColumn.Length)
+                                   ? $"({newColumn.Length})"
+                                   : "");
                     var check = !string.IsNullOrWhiteSpace(newColumn.Check) ? $" CHECK({newColumn.Check}) " : "";
 
                     query.AppendLine(
@@ -428,31 +418,16 @@ namespace Dac.Net.Db
                 query.AppendLine("SET FOREIGN_KEY_CHECKS = 1;");
             }
 
-            var result = string.Join("\n", dropFkQuery) + "\n" + query.ToString() + "\n" +
-                         string.Join("\n", createFkQuery);
-            if (!string.IsNullOrWhiteSpace(result))
+            queryResult.Query = string.Join("\n", dropFkQuery) + "\n" + query.ToString() + "\n" +
+                                string.Join("\n", createFkQuery);
+
+            if (queryOnly)
             {
-                if (!queryOnly)
-                {
-                    using (var trn = _mySqlConnection.BeginTransaction())
-                    {
-                        using (var cmd = new MySqlCommand(result, trn.Connection, trn))
-                        {
-                            cmd.ExecuteNonQuery();
-                        }
-
-                        trn.Commit();
-                    }
-
-                }
-
-                return result;
-
+                return queryResult;
             }
-            else
-            {
-                return null;
-            }
+
+            Transaction(queryResult);
+            return queryResult;
         }
 
         /// <summary>
@@ -660,6 +635,40 @@ namespace Dac.Net.Db
 
             return
                 $"ALTER TABLE `{table}` ADD CONSTRAINT `{name}` FOREIGN KEY (`{column}`) REFERENCES `{targetTable}`(`{targetColumn}`){onupdate}{ondelete};";
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="queryResult"></param>
+        private void Transaction(QueryResult queryResult)
+        {
+            using (var trn = _mySqlConnection.BeginTransaction())
+            {
+                try
+                {
+                    using (var cmd = new MySqlCommand(queryResult.Query, trn.Connection, trn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                catch (Exception e)
+                {
+                    queryResult.Success = false;
+                    queryResult.Exception = e;
+                    trn.Rollback();
+                    return;
+                }
+
+                if (_dryRun)
+                {
+                    trn.Rollback();
+                }
+                else
+                {
+                    trn.Commit();
+                }
+            }
         }
     }
 

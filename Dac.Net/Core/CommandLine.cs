@@ -28,6 +28,8 @@ namespace Dac.Net.Core
         public string InputFile { get; private set; }
         public bool Query { get; private set; }
         public bool Drop { get; private set; }
+        
+        public bool DryRun { get; set; }
         public string OutputFile { get; private set; }
         public List<Server> Servers { get; private set; } = new List<Server>();
         
@@ -66,7 +68,7 @@ namespace Dac.Net.Core
                         servers = Utility.LoadServers(HostsFile);
                         i++;
                         break;
-                    case "-H":
+                    case "-h":
                     case "--host":
                         Host = args[i + 1];
                         server.Host = Host;
@@ -125,6 +127,9 @@ namespace Dac.Net.Core
                     case "--output":
                         OutputFile = args[i + 1];
                         i++;
+                        break;
+                    case "--dry-run":
+                        DryRun = true;
                         break;
                 }
 
