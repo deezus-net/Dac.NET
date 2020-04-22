@@ -19,7 +19,7 @@ dac [command] [option]
 ## option
 | Options | Description | Examples etc. | |
 |:---|:---|:---|:---:|
-| -f, --host &lt;hosts&gt; | Connection information to the database yml file path | hosts.yml | |
+| -f, --hosts &lt;hosts&gt; | Connection information to the database yml file path | hosts.yml | |
 | -h, --host &lt;host&gt; | database host (connection destination name when -f is specified) | localhost | * ||
 | -t, --type &lt;type&gt; | database type | mysql, postgres, mssql | * |
 | -u, --user &lt;user&gt;| users connecting to the database | | * |

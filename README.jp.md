@@ -19,7 +19,7 @@ dac [コマンド] [オプション]
 ## オプション
 | オプション | 説明 | 例など | |
 |:---|:---|:---|:---:|
-| -f, --host &lt;hosts&gt;| データベースへの接続情報ymlファイルパス | hosts.yml | |
+| -f, --hosts &lt;hosts&gt;| データベースへの接続情報ymlファイルパス | hosts.yml | |
 | -h, --host &lt;host&gt; | データベースホスト(-f指定時は接続先名)|localhost| * |
 | -t, --type &lt;type&gt; | データベースタイプ | mysql, postgres, mssql | * |
 | -u, --user &lt;user&gt; | データベースに接続するユーザー |  | * |
