@@ -13,7 +13,7 @@ namespace Dac.Net.Test.Core
         {
             _output = output;
         }
-
+/*
         [Fact]
         public void ArgTest()
         {
@@ -67,6 +67,6 @@ namespace Dac.Net.Test.Core
             var main = new Main("diff", "-f", "TestData/servers.yml", "-i", "TestData/mssql.yml", "-h", "mssql")
                 {OutPut = _output.WriteLine};
             main.Run();
-        }
+        }*/
     }
 }
