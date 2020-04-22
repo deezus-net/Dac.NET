@@ -56,9 +56,6 @@ namespace Dac.Net.Core
                     case Define.Command.Query:
                         Query(db);
                         break;
-                    case Define.Command.Trim:
-                        Trim(db);
-                        break;
                     case Define.Command.Update:
                         Update(db);
                         break;
@@ -346,15 +343,6 @@ namespace Dac.Net.Core
         {
             var query = db?.Query(_commandLine.DataBase);
             OutPut?.Invoke(query);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="db"></param>
-        private void Trim(IDb db)
-        {
-            
         }
 
         /// <summary>

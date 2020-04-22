@@ -13,7 +13,6 @@ namespace Dac.Net.Core
             public const string ReCreate = "recreate";
             public const string Update = "update";
             public const string Diff = "diff";
-            public const string Trim = "trim";
         }
 
         public class DatabaseType

@@ -121,23 +121,24 @@ namespace Dac.Net.Db
             }
 
             // synonyms
-            var synonymNames = CurrentDb.Synonyms.Keys.Concat(NewDb.Synonyms.Keys).Distinct();
-            foreach (var synonymName in synonymNames)
+            var currentSynonyms = CurrentDb.Synonyms ?? new Dictionary<string, Synonym>();
+            var newSynonyms = NewDb.Synonyms ?? new Dictionary<string, Synonym>();
+            foreach (var synonymName in currentSynonyms.Keys.Concat(newSynonyms.Keys))
             {
-                if (!NewDb.Synonyms.ContainsKey(synonymName))
+                if (!newSynonyms.ContainsKey(synonymName))
                 {
                     DeletedSynonymNames.Add(synonymName);
                 }
-                else if (!CurrentDb.Synonyms.ContainsKey(synonymName))
+                else if (!currentSynonyms.ContainsKey(synonymName))
                 {
-                    AddedSynonyms.Add(synonymName, NewDb.Synonyms[synonymName]);
+                    AddedSynonyms.Add(synonymName, newSynonyms[synonymName]);
                 }
-                else if (!CurrentDb.Synonyms[synonymName].Equals(NewDb.Synonyms[synonymName]))
+                else if (!currentSynonyms[synonymName].Equals(newSynonyms[synonymName]))
                 {
                     ModifiedSynonyms.Add(synonymName, new[]
                     {
-                        CurrentDb.Synonyms[synonymName],
-                        NewDb.Synonyms[synonymName]
+                        currentSynonyms[synonymName],
+                        newSynonyms[synonymName]
                     });
                 }
             }

@@ -182,7 +182,6 @@ namespace Dac.Net.Core
                 Define.Command.ReCreate,
                 Define.Command.Update,
                 Define.Command.Diff,
-                Define.Command.Trim
             };
             if (!commands.Contains(Command))
             {
@@ -225,13 +224,6 @@ namespace Dac.Net.Core
                 return false;
             }
 
-            if (new[] {Define.Command.Trim}.Contains(Command) &&
-                (string.IsNullOrWhiteSpace(InputFile) || string.IsNullOrWhiteSpace(OutputFile)))
-            {
-                ErrorMessage = "input, output are required";
-                return false;
-            }
-
             return true;
         }
 
@@ -247,7 +239,6 @@ namespace Dac.Net.Core
             help.AppendLine($"  {Define.Command.Diff}");
             help.AppendLine($"  {Define.Command.Extract}");
             help.AppendLine($"  {Define.Command.Query}");
-            help.AppendLine($"  {Define.Command.Trim}");
             help.AppendLine($"  {Define.Command.Update}");
             help.AppendLine($"  {Define.Command.ReCreate}");
             help.AppendLine("");
