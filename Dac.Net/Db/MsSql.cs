@@ -93,7 +93,13 @@ namespace Dac.Net.Db
                     i.is_primary_key,
                     c.is_descending_key,
                     i.is_unique,
-                    i.type_desc
+                    i.type_desc,
+                    sit.tessellation_scheme,
+                    sit.level_1_grid_desc,
+                    sit.level_2_grid_desc,
+                    sit.level_3_grid_desc,
+                    sit.level_4_grid_desc,
+                    sit.cells_per_object
                 FROM
                     sys.indexes as i 
                 INNER JOIN
@@ -112,6 +118,12 @@ namespace Dac.Net.Db
                     c.object_id = col.object_id
                 AND
                     c.column_id = col.column_id
+                LEFT OUTER JOIN
+                    sys.spatial_index_tessellations as sit
+                ON 
+                    i.object_id = sit.object_id
+                AND
+                    i.index_id = sit.index_id
                 ORDER BY t.name, i.name, c.key_ordinal
         ";
 
@@ -147,6 +159,16 @@ namespace Dac.Net.Db
                     if (type == "spatial")
                     {
                         indices[tableName][indexName].Columns[row.Field<string>("column_name")] = "";
+                        indices[tableName][indexName].Spatial = new Spatial()
+                        {
+                            TessellationSchema = row.Field<string>("tessellation_scheme"),
+                            Level1 = row.Field<string>("level_1_grid_desc"),
+                            Level2 = row.Field<string>("level_2_grid_desc"),
+                            Level3 = row.Field<string>("level_3_grid_desc"),
+                            Level4 = row.Field<string>("level_4_grid_desc"),
+                            CellsPerObject = row.Field<int>("cells_per_object"),
+                        };
+                        
                     }
                     else
                     {
@@ -1025,8 +1047,40 @@ namespace Dac.Net.Db
 
         private string IndexQuery(string tableName, string indexName, Index index)
         {
-            return
-                $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}{(!string.IsNullOrWhiteSpace(index.Type) ? index.Type + " " : "")}INDEX [{indexName}] ON [{tableName}]({string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});";
+            var query = new StringBuilder();
+            query.AppendLine(
+                $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}{(!string.IsNullOrWhiteSpace(index.Type) ? index.Type + " " : "")}INDEX [{indexName}] ON [{tableName}]");
+            query.AppendLine("(");
+            query.AppendLine($"    {string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))}");
+            query.AppendLine(")");
+            if (index.Spatial != null)
+            {
+                query.AppendLine($"USING {index.Spatial.TessellationSchema}");
+                var with = new List<string>();
+                if (!string.IsNullOrWhiteSpace(index.Spatial.Level1) ||
+                    !string.IsNullOrWhiteSpace(index.Spatial.Level2) ||
+                    !string.IsNullOrWhiteSpace(index.Spatial.Level3) ||
+                    !string.IsNullOrWhiteSpace(index.Spatial.Level4) || index.Spatial.CellsPerObject != null)
+                {
+                    with.Add(
+                        $"GRIDS =(LEVEL_1 = {index.Spatial.Level1},LEVEL_2 = {index.Spatial.Level2},LEVEL_3 = {index.Spatial.Level3},LEVEL_4 = {index.Spatial.Level4})");
+                }
+
+                if (index.Spatial.CellsPerObject != null)
+                {
+                    with.Add($"CELLS_PER_OBJECT = {index.Spatial.CellsPerObject}");
+                }
+
+                if (with.Any())
+                {
+                    query.AppendLine($"WITH({string.Join(",", with)})");
+                }
+            }
+
+            return query.ToString();
+            
+          //  return
+          //      $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}{(!string.IsNullOrWhiteSpace(index.Type) ? index.Type + " " : "")}INDEX [{indexName}] ON [{tableName}]({string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});";
         }
 
     }
