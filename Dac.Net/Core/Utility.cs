@@ -150,6 +150,11 @@ namespace Dac.Net.Core
                     }
                 }
             }
+
+            if (!(db.Synonyms?.Any() ?? false))
+            {
+                db.Synonyms = null;
+            }
         }
 
         public static string DataBaseToYaml(DataBase db)

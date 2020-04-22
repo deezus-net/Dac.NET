@@ -57,12 +57,17 @@ namespace Dac.Net.Test.Db
        public void ExtractTest()
         {
             var server = Utility.LoadServers("TestData/servers.yml")["mssql"];
+            var db = Utility.LoadDataBase("TestData/mssql.yml");
+            
             var sql = new MsSql(server, false);
             var res = sql.Connect();
-            var db = sql.Extract();
-            var yaml = Utility.DataBaseToYaml(db);
+            sql.ReCreate(db, false);
+            Utility.TrimDataBaseProperties(db);
+            
+            var extract = sql.Extract();
+            var yaml = Utility.DataBaseToYaml(extract);
             _output.WriteLine(yaml);
-            Assert.NotEmpty(db.Tables);
+            Assert.NotEmpty(extract.Tables);
         }
 
         [Fact]
