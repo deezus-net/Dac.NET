@@ -18,7 +18,7 @@ namespace Dac.Net.Db
         public DataBase CurrentDb { get; set; }
         public DataBase NewDb { get; set; }
 
-        public bool HasDiff => AddedTables.Any() || DeletedTableNames.Any() || ModifiedTables.Any();
+        public bool HasDiff => AddedTables.Any() || DeletedTableNames.Any() || ModifiedTables.Any() || AddedSynonyms.Any() || DeletedSynonymNames.Any() || ModifiedSynonyms.Any();
 
         public Diff()
         {
