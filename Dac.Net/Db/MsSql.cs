@@ -1062,8 +1062,29 @@ namespace Dac.Net.Db
                     !string.IsNullOrWhiteSpace(index.Spatial.Level3) ||
                     !string.IsNullOrWhiteSpace(index.Spatial.Level4) || index.Spatial.CellsPerObject != null)
                 {
-                    with.Add(
-                        $"GRIDS =(LEVEL_1 = {index.Spatial.Level1},LEVEL_2 = {index.Spatial.Level2},LEVEL_3 = {index.Spatial.Level3},LEVEL_4 = {index.Spatial.Level4})");
+                    var grids = new List<string>();
+                    if(!string.IsNullOrWhiteSpace(index.Spatial.Level1))
+                    {
+                        grids.Add($"LEVEL_1 = {index.Spatial.Level1}");
+                    }
+                    if(!string.IsNullOrWhiteSpace(index.Spatial.Level2))
+                    {
+                        grids.Add($"LEVEL_2 = {index.Spatial.Level2}");
+                    }
+                    if(!string.IsNullOrWhiteSpace(index.Spatial.Level3))
+                    {
+                        grids.Add($"LEVEL_3 = {index.Spatial.Level3}");
+                    }
+                    if(!string.IsNullOrWhiteSpace(index.Spatial.Level4))
+                    {
+                        grids.Add($"LEVEL_4 = {index.Spatial.Level4}");
+                    }
+
+                    if (grids.Any())
+                    {
+                        with.Add($"GRIDS =({ string.Join(",", grids)})");
+                    }
+          
                 }
 
                 if (index.Spatial.CellsPerObject != null)

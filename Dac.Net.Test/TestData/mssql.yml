@@ -32,6 +32,9 @@ tables:
         type: spatial
         columns:
           location:
+        spatial:
+          tessellationSchema: GEOGRAPHY_AUTO_GRID
+          cellsPerObject: 12
       IX_name:
         type: nonclustered
         columns:

@@ -42,9 +42,11 @@ namespace Dac.Net.Core
 
         public void Parse(string[] args)
         {
+            ErrorMessage = "";
             if (args.Length == 0)
             {
-
+                ErrorMessage = Help();
+                return;
             }
             else
             {
@@ -160,7 +162,11 @@ namespace Dac.Net.Core
 
         public bool Check()
         {
-            bool result = true;
+            if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                return false;
+            }
+            
             var commands = new[]
             {
                 Define.Command.Create,
@@ -176,7 +182,7 @@ namespace Dac.Net.Core
             if (!commands.Contains(Command))
             {
                 ErrorMessage = Help();
-                result = false;
+                return false;
             }
 
             if (!string.IsNullOrWhiteSpace(HostsFile))
@@ -221,7 +227,7 @@ namespace Dac.Net.Core
                 return false;
             }
 
-            return result;
+            return true;
         }
 
         private static string Help()
