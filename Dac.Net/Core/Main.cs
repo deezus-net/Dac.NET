@@ -210,12 +210,12 @@ namespace Dac.Net.Core
                     if (!(orgIndex.Spatial ?? new Spatial()).Equals(newIndex.Spatial ?? new Spatial()))
                     {
                         OutPut?.Invoke($"      spatial:");
-                        OutPut?.Invoke($"        tessellationSchema: ${orgIndex.Spatial?.TessellationSchema} -> ${newIndex.Spatial?.TessellationSchema}");
-                        OutPut?.Invoke($"        level1: ${orgIndex.Spatial?.Level1} -> ${newIndex.Spatial?.Level1}");
-                        OutPut?.Invoke($"        level2: ${orgIndex.Spatial?.Level2} -> ${newIndex.Spatial?.Level2}");
-                        OutPut?.Invoke($"        level3: ${orgIndex.Spatial?.Level3} -> ${newIndex.Spatial?.Level3}");
-                        OutPut?.Invoke($"        level4: ${orgIndex.Spatial?.Level4} -> ${newIndex.Spatial?.Level4}");
-                        OutPut?.Invoke($"        cellsPerObject: ${orgIndex.Spatial?.CellsPerObject} -> ${newIndex.Spatial?.CellsPerObject}");
+                        OutPut?.Invoke($"        tessellationSchema: {orgIndex.Spatial?.TessellationSchema} -> {newIndex.Spatial?.TessellationSchema}");
+                        OutPut?.Invoke($"        level1: {orgIndex.Spatial?.Level1} -> {newIndex.Spatial?.Level1}");
+                        OutPut?.Invoke($"        level2: {orgIndex.Spatial?.Level2} -> {newIndex.Spatial?.Level2}");
+                        OutPut?.Invoke($"        level3: {orgIndex.Spatial?.Level3} -> {newIndex.Spatial?.Level3}");
+                        OutPut?.Invoke($"        level4: {orgIndex.Spatial?.Level4} -> {newIndex.Spatial?.Level4}");
+                        OutPut?.Invoke($"        cellsPerObject: {orgIndex.Spatial?.CellsPerObject} -> {newIndex.Spatial?.CellsPerObject}");
                     }
 
                 }
