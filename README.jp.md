@@ -20,7 +20,7 @@ dac [コマンド] [オプション]
 | オプション | 説明 | 例など | |
 |:---|:---|:---|:---:|
 | -f, --host &lt;hosts&gt;| データベースへの接続情報ymlファイルパス | hosts.yml | |
-| -H, --host &lt;host&gt; | データベースホスト(-f指定時は接続先名)|localhost| * |
+| -h, --host &lt;host&gt; | データベースホスト(-f指定時は接続先名)|localhost| * |
 | -t, --type &lt;type&gt; | データベースタイプ | mysql, postgres, mssql | * |
 | -u, --user &lt;user&gt; | データベースに接続するユーザー |  | * |
 | -p, --password &lt;password&gt; | データベースに接続する際のパスワード |  | * |
@@ -28,6 +28,7 @@ dac [コマンド] [オプション]
 | -i, --input &lt;input&gt; | 入力ymlファイルパス | db.yml | |
 | -o, --outDir &lt;outDir&gt; | extract時の出力先ディレクトリ | | |
 | -q, --query | create, recreate, update 時にクエリを実行せずに画面に出力します| | |
+| --dry-run | create, recreate, update 時にクエリを実行しますが、コミットしません | | 
 
 ※-f未指定の場合は*のオプションが必須です
 

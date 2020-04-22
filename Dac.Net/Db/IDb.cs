@@ -12,5 +12,6 @@ namespace Dac.Net.Db
         public Diff Diff(DataBase db);
         public bool Connect();
         public bool Close();
+        public string GetName();
     }
 }

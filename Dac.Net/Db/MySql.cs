@@ -25,6 +25,15 @@ namespace Dac.Net.Db
         /// <summary>
         /// 
         /// </summary>
+        /// <returns></returns>
+        public string GetName()
+        {
+            return _server.Name;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="db"></param>
         /// <param name="queryOnly"></param>
         /// <returns></returns>

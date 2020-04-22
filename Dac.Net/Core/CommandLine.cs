@@ -72,6 +72,7 @@ namespace Dac.Net.Core
                     case "--host":
                         Host = args[i + 1];
                         server.Host = Host;
+                        server.Name = Host;
                         i++;
                         break;
                     case "-t":
@@ -244,7 +245,7 @@ namespace Dac.Net.Core
             help.AppendLine("");
             help.AppendLine("options");
             help.AppendLine("  -f, --hosts <filepath>       Hosts file path.");
-            help.AppendLine("  -H, --host <host>            Database server / DataBase name when use hosts file. (required if not use hosts)");
+            help.AppendLine("  -h, --host <host>            Database server / DataBase name when use hosts file. (required if not use hosts)");
             help.AppendLine("  -t, --type <type>            database type. (required if not use hosts)");
             help.AppendLine("  -u, --user <user>            Database user. (required if not use hosts)");
             help.AppendLine("  -p, --password <password>    Database password. (required if not use hosts)");
@@ -253,6 +254,7 @@ namespace Dac.Net.Core
             help.AppendLine("  -i, --input <input-filepath> Yaml path.");
             help.AppendLine("  -q, --query                  Create Query.");
             help.AppendLine("  -D, --drop                   Dropping tables not include in yaml.");
+            help.AppendLine("      --dry-run                execute query, but not commit.");
             help.AppendLine("  -o, --output <output>        Output filename when trim / Output directory when extracting, querying.");
             help.AppendLine("");
             help.AppendLine("ex1");

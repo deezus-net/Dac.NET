@@ -20,7 +20,7 @@ dac [command] [option]
 | Options | Description | Examples etc. | |
 |:---|:---|:---|:---:|
 | -f, --host &lt;hosts&gt; | Connection information to the database yml file path | hosts.yml | |
-| -H, --host &lt;host&gt; | database host (connection destination name when -f is specified) | localhost | * ||
+| -h, --host &lt;host&gt; | database host (connection destination name when -f is specified) | localhost | * ||
 | -t, --type &lt;type&gt; | database type | mysql, postgres, mssql | * |
 | -u, --user &lt;user&gt;| users connecting to the database | | * |
 | -p, --password &lt;password&gt; | Password for connecting to the database | | * |
@@ -28,6 +28,7 @@ dac [command] [option]
 | -i, --input &lt;input&gt; | input yml file path | db.yml | |
 | -o, --outDir &lt;outDir&gt; | output directory of extract directory | | |
 | -q, --query | Output to screen without executing query at create, recreate, update | | |
+| --dry-run |  executing query withount committing at create, recreate, update | | |
 
 *-f option is required for unspecified
 

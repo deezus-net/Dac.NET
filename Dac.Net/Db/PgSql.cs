@@ -22,6 +22,21 @@ namespace Dac.Net.Db
             _dryRun = dryRun;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public string GetName()
+        {
+            return _server.Name;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="queryOnly"></param>
+        /// <returns></returns>
         public QueryResult Drop(DataBase db, bool queryOnly)
         {
             var queryResult = new QueryResult();

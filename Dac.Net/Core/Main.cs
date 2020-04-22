@@ -85,16 +85,16 @@ namespace Dac.Net.Core
                 }
                 else if(_commandLine.DryRun)
                 {
-                    OutPut?.Invoke("create is success (dry run)");
+                    OutPut?.Invoke($"[{db?.GetName()}] create is success (dry run)");
                 }
                 else
                 {
-                    OutPut?.Invoke("create is success");
+                    OutPut?.Invoke($"[{db?.GetName()}] create is success");
                 }
             }
             else
             {
-                OutPut?.Invoke("create is failed");
+                OutPut?.Invoke($"[{db?.GetName()}] create is failed");
                 OutPut?.Invoke($"{result.Exception.Message}");
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
@@ -114,10 +114,11 @@ namespace Dac.Net.Core
 
             if (!diff.HasDiff)
             {
-                OutPut?.Invoke("no difference");
+                OutPut?.Invoke($"[{db?.GetName()}] no difference");
                 return;
             }
 
+            OutPut?.Invoke($"[{db?.GetName()}]");
             foreach (var (tableName, table) in diff.AddedTables)
             {
                 //  console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `+ ${tableName}`);
@@ -271,6 +272,8 @@ namespace Dac.Net.Core
                 }
                 //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
             }
+            
+            OutPut?.Invoke("");
 
         }
 
@@ -292,16 +295,16 @@ namespace Dac.Net.Core
                 }
                 else if(_commandLine.DryRun)
                 {
-                    OutPut?.Invoke("drop is success (dry run)");
+                    OutPut?.Invoke($"[{db?.GetName()}] drop is success (dry run)");
                 }
                 else
                 {
-                    OutPut?.Invoke("drop is success");
+                    OutPut?.Invoke($"[{db?.GetName()}] drop is success");
                 }
             }
             else
             {
-                OutPut?.Invoke("drop is failed");
+                OutPut?.Invoke($"[{db?.GetName()}] drop is failed");
                 OutPut?.Invoke($"{result.Exception.Message}");
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
@@ -358,7 +361,7 @@ namespace Dac.Net.Core
             {
                 if (string.IsNullOrWhiteSpace(result.Query))
                 {
-                    OutPut?.Invoke($"nothing to do");
+                    OutPut?.Invoke($"[{db?.GetName()}] nothing to do");
                 }
                 else if(_commandLine.Query)
                 {
@@ -366,16 +369,16 @@ namespace Dac.Net.Core
                 }
                 else if(_commandLine.DryRun)
                 {
-                    OutPut?.Invoke("update is success (dry run)");
+                    OutPut?.Invoke($"[{db?.GetName()}] update is success (dry run)");
                 }
                 else
                 {
-                    OutPut?.Invoke("update is success");
+                    OutPut?.Invoke($"[{db?.GetName()}] update is success");
                 }
             }
             else
             {
-                OutPut?.Invoke("update is failed");
+                OutPut?.Invoke($"[{db?.GetName()}] update is failed");
                 OutPut?.Invoke($"{result.Exception.Message}");
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
@@ -399,16 +402,16 @@ namespace Dac.Net.Core
                 }
                 else if(_commandLine.DryRun)
                 {
-                    OutPut?.Invoke("recreate is success (dry run)");
+                    OutPut?.Invoke($"[{db?.GetName()}] recreate is success (dry run)");
                 }
                 else
                 {
-                    OutPut?.Invoke("recreate is success");
+                    OutPut?.Invoke($"[{db?.GetName()}] recreate is success");
                 }
             }
             else
             {
-                OutPut?.Invoke("recreate is failed");
+                OutPut?.Invoke($"[{db?.GetName()}] recreate is failed");
                 OutPut?.Invoke($"{result.Exception.Message}");
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
