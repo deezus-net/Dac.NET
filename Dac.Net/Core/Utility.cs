@@ -169,5 +169,14 @@ namespace Dac.Net.Core
             return sb.ToString();
 
         }
+
+        public static string TrimQuery(string src)
+        {
+            var result = Regex.Replace(src, "[\\s]+", " ");
+            
+            
+            
+            return result;
+        }
     }
 }

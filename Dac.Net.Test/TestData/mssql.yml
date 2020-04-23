@@ -57,6 +57,10 @@ tables:
         type: nvarchar
         length: 30
         notNull: true
+views:
+  vUser: SELECT u.id, u.name, g.name AS group_name FROM users AS u INNER JOIN groups AS g ON u.group_id = g.id
+  vUser2: SELECT u.id, u.name, g.name AS group_name FROM users AS u INNER JOIN groups AS g ON u.group_id = g.id
+
 #synonyms:
 #  spt_monitor:
 #    database: master

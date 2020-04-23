@@ -440,8 +440,34 @@ namespace Dac.Net.Db
                 }
                 
             }
+            
+            // views
+            var views = new Dictionary<string, string>();
+            query = @"
+                SELECT 
+                    v.name,
+                    m.definition
+                FROM
+                    sys.views AS v
+                INNER JOIN 
+                    sys.sql_modules AS m
+                ON  
+                    v.object_id = m.object_id";
+            foreach (DataRow row in GetResult(query).Rows)
+            {
+                
+                var definition = row.Field<string>("definition");
+                var tmp = Regex.Split(definition, "as|AS");
+                if (tmp.Length > 1)
+                {
+                    definition = string. Join("", tmp.Where((x,i) => i > 0  ));
+                }
 
-            var db = new DataBase() {Tables = tables, Synonyms = synonyms};
+                definition = Utility.TrimQuery(definition);
+                views.Add(row.Field<string>("name"), definition.Trim());
+            }
+
+            var db = new DataBase() {Tables = tables, Synonyms = synonyms, Views = views };
             Utility.TrimDataBaseProperties(db);
             return db;
         }
@@ -545,6 +571,19 @@ namespace Dac.Net.Db
             {
                 queries.AppendLine($"DROP SYNONYM [{row.Field<string>("name")}];");
             }
+            
+            // drop views
+            query = @"
+                    SELECT
+                        name
+                    FROM
+                        sys.views
+            ";
+            foreach (DataRow row in GetResult(query).Rows)
+            {
+                queries.AppendLine($"DROP VIEW [{row.Field<string>("name")}];");
+            }
+            
             queries.AppendLine(CreateQuery(db));
 
             queryResult.Query = queries.ToString();
@@ -926,6 +965,18 @@ namespace Dac.Net.Db
                 }
 
             }
+            
+            var viewQuery = new StringBuilder();
+            if (db.Views?.Any() ?? false)
+            {
+                viewQuery.AppendLine("GO");
+                foreach (var (viewName, define) in db.Views)
+                {
+                    viewQuery.AppendLine($"CREATE VIEW [{viewName}]");
+                    viewQuery.AppendLine("AS");
+                    viewQuery.AppendLine($"{Utility.TrimQuery(define)};");
+                }
+            }
 
             var synonymQuery = new StringBuilder();
             foreach (var (synonymName, synonym) in (db.Synonyms ?? new Dictionary<string, Synonym>()))
@@ -936,7 +987,8 @@ namespace Dac.Net.Db
                 synonymQuery.AppendLine($"CREATE SYNONYM [{synonymName}] FOR {objectName};");
             }
 
-            return $"{query}\n{fkQuery}\n{synonymQuery}";
+            return $"{query}\n{fkQuery}\n{synonymQuery}\n{viewQuery}";
+            
         }
 
         

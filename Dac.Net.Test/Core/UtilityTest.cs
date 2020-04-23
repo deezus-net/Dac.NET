@@ -25,5 +25,12 @@ namespace Dac.Net.Test.Core
             var db = Utility.LoadDataBase("TestData/mssql.yml");
             Assert.NotNull(db);
         }
+        
+        [Fact]
+        public void TrimQueryTest()
+        {
+            var result = Utility.TrimQuery("t   e  st");
+            Assert.Equal( "t e st", result);
+        }
     }
 }
