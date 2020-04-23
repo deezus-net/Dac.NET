@@ -62,38 +62,36 @@ namespace Dac.Net.Core
             {
                 switch (args[i])
                 {
-                    case "-f":
                     case "--hosts":
                         HostsFile = args[i + 1];
                         servers = Utility.LoadServers(HostsFile);
+                        foreach (var (name, s) in servers)
+                        {
+                            s.Name = name;
+                        }
                         i++;
                         break;
-                    case "-h":
                     case "--host":
                         Host = args[i + 1];
                         server.Host = Host;
                         server.Name = Host;
                         i++;
                         break;
-                    case "-t":
                     case "--type":
                         Type = args[i + 1];
                         server.Type = Type;
                         i++;
                         break;
-                    case "-u":
                     case "--user":
                         User = args[i + 1];
                         server.User = User;
                         i++;
                         break;
-                    case "-p":
                     case "--password":
                         Password = args[i + 1];
                         server.Password = Password;
                         i++;
                         break;
-                    case "-P":
                     case "--port":
                         Port = args[i + 1];
                         if (int.TryParse(args[i + 1], out var port))
@@ -103,34 +101,32 @@ namespace Dac.Net.Core
 
                         i++;
                         break;
-                    case "-d":
                     case "--database":
                         Database = args[i + 1];
                         server.Database = Database;
                         i++;
                         break;
-                    case "-i":
                     case "--input":
                         InputFile = args[i + 1];
                         DataBase = Utility.LoadDataBase(InputFile);
                         Utility.TrimDataBaseProperties(DataBase);
                         i++;
                         break;
-                    case "-q":
                     case "--query":
                         Query = true;
                         break;
-                    case "-D":
                     case "--drop":
                         Drop = true;
                         break;
-                    case "-o":
                     case "--output":
                         OutputFile = args[i + 1];
                         i++;
                         break;
                     case "--dry-run":
                         DryRun = true;
+                        break;
+                    case "--help" :
+                        ErrorMessage = Help();
                         break;
                 }
 
@@ -244,23 +240,24 @@ namespace Dac.Net.Core
             help.AppendLine($"  {Define.Command.ReCreate}");
             help.AppendLine("");
             help.AppendLine("options");
-            help.AppendLine("  -f, --hosts <filepath>       Hosts file path.");
-            help.AppendLine("  -h, --host <host>            Database server / DataBase name when use hosts file. (required if not use hosts)");
-            help.AppendLine("  -t, --type <type>            database type. (required if not use hosts)");
-            help.AppendLine("  -u, --user <user>            Database user. (required if not use hosts)");
-            help.AppendLine("  -p, --password <password>    Database password. (required if not use hosts)");
-            help.AppendLine("  -P, --port <port number>     Database port.");
-            help.AppendLine("  -d, --database <database>    Database name. (required if not use hosts)");
-            help.AppendLine("  -i, --input <input-filepath> Yaml path.");
-            help.AppendLine("  -q, --query                  Create Query.");
-            help.AppendLine("  -D, --drop                   Dropping tables not include in yaml.");
-            help.AppendLine("      --dry-run                execute query, but not commit.");
-            help.AppendLine("  -o, --output <output>        Output filename when trim / Output directory when extracting, querying.");
+            help.AppendLine("  --hosts <filepath>       hosts file path.");
+            help.AppendLine("  --host <host>             database server / DataBase name when use hosts file. (required if not use hosts)");
+            help.AppendLine("  --type <type>             database type. (required if not use hosts)");
+            help.AppendLine("  --user <user>             database user. (required if not use hosts)");
+            help.AppendLine("  --password <password>     database password. (required if not use hosts)");
+            help.AppendLine("  --port <port number>      database port.");
+            help.AppendLine("  --database <database>     database name. (required if not use hosts)");
+            help.AppendLine("  --input <input filepath>  yaml path.");
+            help.AppendLine("  --query                   create Query.");
+            help.AppendLine("  --drop                    dropping tables not include in yaml.");
+            help.AppendLine("  --dry-run                 execute query, but not commit.");
+            help.AppendLine("  --output <output dirpath> output directory when extracting, querying.");
             help.AppendLine("");
+            help.AppendLine("  --help                    show help.");
             help.AppendLine("ex1");
-            help.AppendLine("  dac extract -H localhost -t mysql -u root -P password -d sample -o db.yml");
+            help.AppendLine("  dac extract --host localhost --type mysql --user root --password password --database sample --output db.yml");
             help.AppendLine("ex2");
-            help.AppendLine("  dac extract -f servers.yml -o .");
+            help.AppendLine("  dac extract --hosts servers.yml --output .");
             help.AppendLine("");
             help.AppendLine("https://github.com/deezus-net/Dac.Net");
             return help.ToString();

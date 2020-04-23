@@ -10,100 +10,101 @@ dac [command] [option]
 ## command
 | Command | Description |
 |:---|:---|
-| extract | Connect to the database and export the tables as yml |
-| create | Create tables from yml |
-| recreate | drops the existing tables and reconstructs the tables from yml |
-| update | Compare the differences between yml and the database and update tables and columns |
-| diff | Display difference between yml and database |
+| extract | Connect to the database and export the tables as yaml |
+| create | Create tables from yaml |
+| recreate | drops the existing tables and reconstructs the tables from yaml |
+| update | Compare the differences between yaml and the database and update tables and columns |
+| diff | Display difference between yaml and database |
 
 ## option
 | Options | Description | Examples etc. | |
 |:---|:---|:---|:---:|
-| -f, --hosts &lt;hosts&gt; | Connection information to the database yml file path | hosts.yml | |
-| -h, --host &lt;host&gt; | database host (connection destination name when -f is specified) | localhost | * ||
-| -t, --type &lt;type&gt; | database type | mysql, postgres, mssql | * |
-| -u, --user &lt;user&gt;| users connecting to the database | | * |
-| -p, --password &lt;password&gt; | Password for connecting to the database | | * |
-| -d, --database &lt;database&gt; | database name | | * |
-| -i, --input &lt;input&gt; | input yml file path | db.yml | |
-| -o, --outDir &lt;outDir&gt; | output directory of extract directory | | |
-| -q, --query | Output to screen without executing query at create, recreate, update | | |
+| --hosts &lt;hosts&gt; | Connection information to the database yaml file path | hosts.yml | |
+| --host &lt;host&gt; | database host (connection destination name when -f is specified) | localhost | * ||
+| --type &lt;type&gt; | database type | mysql, pgsql, mssql | * |
+| --user &lt;user&gt;| users connecting to the database | | * |
+| --password &lt;password&gt; | Password for connecting to the database | | * |
+| --database &lt;database&gt; | database name | | * |
+| --input &lt;input&gt; | input yaml file path | db.yml | |
+| --output &lt;output&gt; | output directory of extract directory | | |
+| --query | Output to screen without executing query at create, recreate, update | | |
 | --dry-run |  executing query withount committing at create, recreate, update | | |
+| --help | show help| | |
 
-*-f option is required for unspecified
+*--hosts option is required for unspecified
 
 ## Example of use
 
 ### extract
 When specifying connection information with argument
 ```
-dac extract -H localhost -t mysql -u root -p password -d dac -o .
+dac extract --host localhost --type mysql --user root --password password --database dac --output .
 ```
 When setting connection information in a file
 ```
-dac extract -f hosts.yml -o .
+dac extract --hosts hosts.yml --output .
 ```
 --------------
   
 ### create
 When specifying connection information with argument
 ```
-dac create -H localhost -t mysql -u root -p password -d dac -i db.yml
+dac create --host localhost --type mysql --user root --password password --database dac --input db.yml
 ```
 When setting connection information in a file
 ```
-dac create -f hosts.yml -i db.yml
+dac create --hosts hosts.yml --input db.yml
 ```
 When query is displayed
 ```
-dac create -f hosts.yml -i db.yml -q
+dac create --hosts hosts.yml --input db.yml --query
 ```
 --------------
   
 ### recreate
 When specifying connection information with argument
 ```
-dac recreate -H localhost -t mysql -u root -p password -d dac -i db.yml
+dac recreate --host localhost --type mysql --user root --password password --database dac --input db.yml
 ```
 When setting connection information in a file
 ```
-dac recreate -f hosts.yml -i db.yml
+dac recreate --hosts hosts.yml --input db.yml
 ```
 When query is displayed
 ```
-dac recreate -f hosts.yml -i db.yml -q
+dac recreate --hosts hosts.yml --input db.yml --query
 ```
 --------------
   
 ### update
 When specifying connection information with argument
 ```
-dac update -H localhost -t mysql -u root -p password -d dac -i db.yml
+dac update --hosts localhost --type mysql --user root --password password --database dac --input db.yml
 ```
 When setting connection information in a file
 ```
-dac update -f hosts.yml -i db.yml
+dac update --hosts hosts.yml --input db.yml
 ```
 When query is displayed
 ```
-dac update -f hosts.yml -i db.yml -q
+dac update --hosts hosts.yml --input db.yml --query
 ```
 --------------
   
 ### diff
 When specifying connection information with argument
 ```
-dac diff -H localhost -t mysql -u root -p password -d dac -i db.yml
+dac diff --host localhost --type mysql --user root --password password --database dac --input db.yml
 ```
 When setting connection information in a file
 ```
-dac diff -f hosts.yml -i db.yml
+dac diff --hosts hosts.yml --input db.yml
 ```
 
 ## About hosts
-You can list multiple connection information in yml
-You can mix different types of databases as follows
-If you do not specify a name with the -h option, the command is executed for all destinations
+You can list multiple connection information in yml  
+You can mix different types of databases as follows  
+If you do not specify a name with the --host option, the command is executed for all destinations
 ```yaml: hosts.yml
 server 1:
   type: mysql
@@ -113,7 +114,7 @@ server 1:
   database: dac
  
 server 2:
-  type: postgres
+  type: pgsql
   host: localhost
   user: db_user_2
   password: password
@@ -128,14 +129,14 @@ server3:
 ```
 
 ### extract example
-When doing to all connection destinations
-A file is created for server1.yml, server2.yml and connection destination
+When doing to all connection destinations  
+A file is created for server1.yml, server2.yml, server3.yml and connection destination
 ```
-dac extract -i hosts.yml -o .
+dac extract --input hosts.yml --output .
 ```
 
-When specifying the connection destination name
+When specifying the connection destination name  
 It extracts only 'server1' and creates server1.yml
 ```
-dac extract -i hosts.yml -h server1 -o .
+dac extract --input hosts.yml --host server1 --output .
 ```

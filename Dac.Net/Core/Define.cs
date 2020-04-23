@@ -18,7 +18,7 @@ namespace Dac.Net.Core
         public class DatabaseType
         {
             public const string Mysql = "mysql";
-            public const string Postgres = "postgres";
+            public const string Postgres = "pgsql";
             public const string MsSql = "mssql";
         }
 
