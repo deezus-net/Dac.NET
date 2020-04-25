@@ -68,8 +68,18 @@ namespace Dac.Net.Db
         public DataBase Extract()
         {
             var tables = new Dictionary<string, Table>();
+            var query = @"
+                        SELECT 
+                            TABLE_NAME AS name, 
+                            TABLE_TYPE AS type 
+                        FROM 
+                            information_schema.TABLES 
+                        WHERE 
+                            TABLE_SCHEMA = @database
+                        AND 
+                            TABLE_TYPE = 'BASE TABLE'";
 
-            foreach (DataRow row in GetResult("show tables").Rows)
+            foreach (DataRow row in GetResult(query, null, new MySqlParameter("database", _server.Database)).Rows)
             {
                 tables.Add(row.Field<string>(0), new Table());
             }
@@ -114,7 +124,7 @@ namespace Dac.Net.Db
 
                 // get foreign key
                 var fkNames = new List<string>();
-                var query = @"
+                query = @"
                     SELECT
                         col.TABLE_NAME AS table_name,
                         col.COLUMN_NAME AS column_name,
@@ -209,8 +219,24 @@ namespace Dac.Net.Db
                     }
                 }
             }
+            
+            // get views
+            var views = new Dictionary<string, string>();
+            query = @"
+                SELECT 
+                    TABLE_NAME AS name,
+                    VIEW_DEFINITION AS definition
+                FROM
+                    information_schema.VIEWS
+                WHERE
+                    TABLE_SCHEMA = @database
+            ";
+            foreach (DataRow row in GetResult(query, null, new MySqlParameter("database", _server.Database)).Rows)
+            {
+                views.Add(row.Field<string>("name"), row.Field<string>("definition"));
+            }
 
-            var db = new DataBase() {Tables = tables};
+            var db = new DataBase() {Tables = tables, Views = views};
             Utility.TrimDataBaseProperties(db);
             return db;
 
@@ -257,16 +283,34 @@ namespace Dac.Net.Db
         {
             var queryResult = new QueryResult();
             var tables = new List<string>();
-            foreach (DataRow row in GetResult("show tables").Rows)
+            var views = new List<string>();
+            
+            foreach (DataRow row in GetResult("SELECT TABLE_NAME AS name, TABLE_TYPE AS type from information_schema.TABLES WHERE TABLE_SCHEMA = @database", null, new MySqlParameter("database", _server.Database)).Rows)
             {
-                tables.Add(row.Field<string>(0));
+                if (row.Field<string>("type") == "VIEW")
+                {
+                    views.Add(row.Field<string>("name"));
+                }
+                else if (row.Field<string>("type") == "BASE TABLE")
+                {
+                    tables.Add(row.Field<string>("name"));
+                }
+                
             }
 
             var query = new StringBuilder();
             if (tables.Any())
             {
                 query.AppendLine("SET FOREIGN_KEY_CHECKS = 0;");
-                query.AppendLine($"DROP TABLE {string.Join(",", tables.Select(x => $"`{x}`"))};");
+                if (tables.Any())
+                {
+                    query.AppendLine($"DROP TABLE {string.Join(",", tables.Select(x => $"`{x}`"))};");
+                }
+
+                if (views.Any())
+                {
+                    query.AppendLine($"DROP VIEW {string.Join(",", views.Select(x => $"`{x}`"))};");
+                }
                 query.AppendLine("SET FOREIGN_KEY_CHECKS = 1;");
             }
 
@@ -599,6 +643,12 @@ namespace Dac.Net.Db
                             fk.Update, fk.Delete));
                     }
                 }
+            }
+            
+            // Views
+            foreach (var (viewName, definition) in db.Views ?? new Dictionary<string, string>())
+            {
+                query.AppendLine($"CREATE VIEW {viewName} AS {definition};");
             }
 
             return query.ToString();
