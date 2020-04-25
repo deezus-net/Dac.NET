@@ -320,8 +320,17 @@ namespace Dac.Net.Db
                         });
                 }
             }
+            
+            // views
+            var views = new Dictionary<string, string>();
+            foreach (DataRow row in GetResult(
+                "SELECT viewname, definition FROM pg_views WHERE schemaname = 'public' AND viewowner = @database", null,
+                new NpgsqlParameter("database", _server.Database)).Rows)
+            {
+                views.Add(row.Field<string>("viewname"), row.Field<string>("definition"));
+            }
 
-            var db = new DataBase() {Tables = tables};
+            var db = new DataBase() {Tables = tables, Views = views};
             Utility.TrimDataBaseProperties(db);
             return db;
         }
@@ -557,9 +566,30 @@ namespace Dac.Net.Db
                     query.AppendLine($"DROP TABLE \"{tableName}\" CASCADE;");
                 }
             }
+            
+            // views
+            var viewQuery = new StringBuilder();
+            if (diff.AddedViews.Any())
+            {
+                viewQuery.AppendLine(CreateQuery(new DataBase() {Views = diff.AddedViews}));
+            }
 
-            queryResult.Query = string.Join("\n", dropFkQuery) + '\n' + query.ToString() + '\n' +
-                         string.Join("\n", createFkQuery);
+            foreach(var viewName in diff.DeletedViewNames)
+            {
+                viewQuery.AppendLine($"DROP VIEW \"{viewName}\"");
+            }
+
+            foreach (var (viewName, definition) in diff.ModifiedViews)
+            {
+                viewQuery.AppendLine($"DROP VIEW \"{viewName}\";");
+
+                viewQuery.AppendLine(CreateQuery(new DataBase()
+                    {Views = new Dictionary<string, string>() {{viewName, definition[1]}}}));
+            }
+
+
+            queryResult.Query = string.Join("\n", dropFkQuery) + '\n' + query + '\n' +
+                                string.Join("\n", createFkQuery) + '\n' + viewQuery;
             if (queryOnly)
             {
                 return queryResult;
@@ -725,6 +755,12 @@ namespace Dac.Net.Db
                             fk.Update, fk.Delete));
                     }
                 }
+            }
+            
+            // views
+            foreach (var (viewName, definition) in db.Views ?? new Dictionary<string, string>())
+            {
+                query.AppendLine($"CREATE VIEW \"{viewName}\" AS {definition};");
             }
 
             return query.ToString();

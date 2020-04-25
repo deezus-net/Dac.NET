@@ -47,7 +47,10 @@ namespace Dac.Net.Db
             {
                 queries.AppendLine($"DROP TABLE IF EXISTS `{tableName}`;");
             }
-
+            foreach (var (viewName, definition) in db.Views)
+            {
+                queries.AppendLine($"DROP VIEW IF EXISTS `{viewName}`;");
+            }
             queries.AppendLine("SET FOREIGN_KEY_CHECKS = 1;");
 
             queryResult.Query = queries.ToString();
@@ -470,9 +473,29 @@ namespace Dac.Net.Db
 
                 query.AppendLine("SET FOREIGN_KEY_CHECKS = 1;");
             }
+            
+            // views
+            var viewQuery = new StringBuilder();
+            if (diff.AddedViews.Any())
+            {
+                viewQuery.AppendLine(CreateQuery(new DataBase() {Views = diff.AddedViews}));
+            }
 
-            queryResult.Query = string.Join("\n", dropFkQuery) + "\n" + query.ToString() + "\n" +
-                                string.Join("\n", createFkQuery);
+            foreach(var viewName in diff.DeletedViewNames)
+            {
+                viewQuery.AppendLine($"DROP VIEW `{viewName}`");
+            }
+
+            foreach (var (viewName, definition) in diff.ModifiedViews)
+            {
+                viewQuery.AppendLine($"DROP VIEW `{viewName}`;");
+
+                viewQuery.AppendLine(CreateQuery(new DataBase()
+                    {Views = new Dictionary<string, string>() {{viewName, definition[1]}}}));
+            }
+
+            queryResult.Query = string.Join("\n", dropFkQuery) + "\n" + query + "\n" +
+                                string.Join("\n", createFkQuery)+ "\n" + viewQuery;
 
             if (queryOnly)
             {
@@ -648,7 +671,7 @@ namespace Dac.Net.Db
             // Views
             foreach (var (viewName, definition) in db.Views ?? new Dictionary<string, string>())
             {
-                query.AppendLine($"CREATE VIEW {viewName} AS {definition};");
+                query.AppendLine($"CREATE VIEW `{viewName}` AS {definition};");
             }
 
             return query.ToString();
