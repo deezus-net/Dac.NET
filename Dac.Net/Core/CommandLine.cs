@@ -31,6 +31,8 @@ namespace Dac.Net.Core
         
         public bool DryRun { get; set; }
         public string OutputFile { get; private set; }
+        
+        public bool OverWrite { get; private set; }
         public List<Server> Servers { get; private set; } = new List<Server>();
         
         public DataBase DataBase { get; private set; }
@@ -124,6 +126,9 @@ namespace Dac.Net.Core
                         break;
                     case "--dry-run":
                         DryRun = true;
+                        break;
+                    case "--over-write":
+                        OverWrite = true;
                         break;
                     case "--help" :
                         ErrorMessage = Help();
@@ -252,6 +257,7 @@ namespace Dac.Net.Core
             help.AppendLine("  --drop                    dropping tables not include in yaml.");
             help.AppendLine("  --dry-run                 execute query, but not commit.");
             help.AppendLine("  --output <output dirpath> output directory when extracting, querying.");
+            help.AppendLine("  --over-write              overwrite input file when creating, recreating, updating");
             help.AppendLine("");
             help.AppendLine("  --help                    show help.");
             help.AppendLine("ex1");

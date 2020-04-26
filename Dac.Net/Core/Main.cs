@@ -75,10 +75,18 @@ namespace Dac.Net.Core
         {
             db?.Connect();
             var result = db?.Create(_commandLine.DataBase, _commandLine.Query);
-            db?.Close();
+            
             
             if (result.Success)
             {
+                if (_commandLine.OverWrite)
+                {
+                    var extractDb = db?.Extract();
+                    var yaml = Utility.DataBaseToYaml(extractDb);
+                    File.WriteAllText(_commandLine.InputFile, yaml);
+                }
+                
+                
                 if(_commandLine.Query)
                 {
                     OutPut?.Invoke($"{result.Query}");
@@ -99,7 +107,7 @@ namespace Dac.Net.Core
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
             }
-            
+            db?.Close();
         }
 
         /// <summary>
@@ -417,9 +425,17 @@ namespace Dac.Net.Core
         {
             db?.Connect();
             var result = db?.Update(_commandLine.DataBase, _commandLine.Query, _commandLine.Drop);
-            db?.Close();
+            
+            
             if (result.Success)
             {
+                if (_commandLine.OverWrite)
+                {
+                    var extractDb = db?.Extract();
+                    var yaml = Utility.DataBaseToYaml(extractDb);
+                    File.WriteAllText(_commandLine.InputFile, yaml);
+                }
+                
                 if (string.IsNullOrWhiteSpace(result.Query))
                 {
                     OutPut?.Invoke($"[{db?.GetName()}] nothing to do");
@@ -444,6 +460,8 @@ namespace Dac.Net.Core
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
             }
+            
+            db?.Close();
         }
 
         /// <summary>
@@ -454,9 +472,16 @@ namespace Dac.Net.Core
         {
             db?.Connect();
             var result = db?.ReCreate(_commandLine.DataBase, _commandLine.Query);
-            db?.Close();
+            
             if (result.Success)
             {
+                if (_commandLine.OverWrite)
+                {
+                    var extractDb = db?.Extract();
+                    var yaml = Utility.DataBaseToYaml(extractDb);
+                    File.WriteAllText(_commandLine.InputFile, yaml);
+                }
+                
                 if(_commandLine.Query)
                 {
                     OutPut?.Invoke($"{result.Query}");
@@ -477,6 +502,7 @@ namespace Dac.Net.Core
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
             }
+            db?.Close();
         }
     }
 }

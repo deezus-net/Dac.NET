@@ -657,7 +657,7 @@ namespace Dac.Net.Db
             // foreign key
             foreach (var (tableName, table) in db.Tables)
             {
-                foreach (var (columnName, column) in table.Columns.Where(x => x.Value.ForeignKeys.Any()))
+                foreach (var (columnName, column) in table.Columns.Where(x => x.Value.ForeignKeys?.Any() ?? false))
                 {
 
                     foreach (var (fkName, fk) in column.ForeignKeys)

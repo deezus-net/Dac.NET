@@ -745,18 +745,21 @@ namespace Dac.Net.Db
             }
 
             // foreign key
-            foreach (var (tableName, table) in db.Tables)
+            if (db.Tables.Any())
             {
-                foreach (var (columnName, column) in table.Columns.Where(c => c.Value.ForeignKeys.Any()))
+                foreach (var (tableName, table) in db.Tables)
                 {
-                    foreach (var (fkName, fk) in column.ForeignKeys)
+                    foreach (var (columnName, column) in table.Columns.Where(c => c.Value.ForeignKeys?.Any() ?? false))
                     {
-                        query.AppendLine(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
-                            fk.Update, fk.Delete));
+                        foreach (var (fkName, fk) in column.ForeignKeys)
+                        {
+                            query.AppendLine(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
+                                fk.Update, fk.Delete));
+                        }
                     }
                 }
             }
-            
+
             // views
             foreach (var (viewName, definition) in db.Views ?? new Dictionary<string, string>())
             {
