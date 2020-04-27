@@ -29,6 +29,7 @@ dac [command] [option]
 | --output &lt;output&gt; | output directory of extract directory | | |
 | --query | Output to screen without executing query at create, recreate, update | | |
 | --dry-run |  executing query withount committing at create, recreate, update | | |
+| --over-write | after createing, recreating, updating, extracting and overwriting input file | |
 | --help | show help| | |
 
 *--hosts option is required for unspecified

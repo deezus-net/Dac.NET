@@ -29,6 +29,7 @@ dac [コマンド] [オプション]
 | --output &lt;output&gt; | extract時の出力先ディレクトリ | | |
 | --query | create, recreate, update 時にクエリを実行せずに画面に出力します| | |
 | --dry-run | create, recreate, update 時にクエリを実行しますが、コミットしません | | 
+| --over-write | create, recreate, update後にextractしinputのyamlを上書きします |  |
 | --help | ヘルプ表示| |
 
 ※--hosts未指定の場合は*のオプションが必須です
