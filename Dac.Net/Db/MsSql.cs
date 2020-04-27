@@ -969,9 +969,10 @@ namespace Dac.Net.Db
             var viewQuery = new StringBuilder();
             if (db.Views?.Any() ?? false)
             {
-                viewQuery.AppendLine("GO");
+                
                 foreach (var (viewName, define) in db.Views)
                 {
+                    viewQuery.AppendLine("GO");
                     viewQuery.AppendLine($"CREATE VIEW [{viewName}]");
                     viewQuery.AppendLine("AS");
                     viewQuery.AppendLine($"{Utility.TrimQuery(define)};");
