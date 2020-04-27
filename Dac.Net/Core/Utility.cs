@@ -155,6 +155,11 @@ namespace Dac.Net.Core
             {
                 db.Synonyms = null;
             }
+            
+            if (!(db.Views?.Any() ?? false))
+            {
+                db.Views = null;
+            }
         }
 
         public static string DataBaseToYaml(DataBase db)

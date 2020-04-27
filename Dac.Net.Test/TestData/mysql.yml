@@ -47,4 +47,6 @@ tables:
         type: varchar
         length: 30
         notNull: true
+views:
+  vUser: 'select `dac`.`users`.`id` AS `id` from `dac`.`users`'
     

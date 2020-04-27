@@ -197,7 +197,8 @@ namespace Dac.Net.Db
                 type.name AS type,
                 c.max_length,
                 c.is_nullable ,
-                c.is_identity
+                c.is_identity,
+                type.max_length AS type_max_length
             FROM
                 sys.tables AS t 
             INNER JOIN
@@ -223,7 +224,7 @@ namespace Dac.Net.Db
                 }
 
                 var length = row.Field<short>("max_length");
-                var lengthString = "";
+                var lengthString = length == row.Field<short>("type_max_length") ? "" : length.ToString();
                 var type = row.Field<string>("type");
                 switch (type)
                 {
@@ -239,6 +240,12 @@ namespace Dac.Net.Db
                             lengthString = "max";
                         }
 
+                        break;
+                    case "varbinary":
+                        if (length < 0)
+                        {
+                            lengthString = "max";
+                        }
                         break;
                     case "int":
                     case "datetime":

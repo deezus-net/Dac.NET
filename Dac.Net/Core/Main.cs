@@ -75,10 +75,18 @@ namespace Dac.Net.Core
         {
             db?.Connect();
             var result = db?.Create(_commandLine.DataBase, _commandLine.Query);
-            db?.Close();
+            
             
             if (result.Success)
             {
+                if (_commandLine.OverWrite)
+                {
+                    var extractDb = db?.Extract();
+                    var yaml = Utility.DataBaseToYaml(extractDb);
+                    File.WriteAllText(_commandLine.InputFile, yaml);
+                }
+                
+                
                 if(_commandLine.Query)
                 {
                     OutPut?.Invoke($"{result.Query}");
@@ -99,7 +107,7 @@ namespace Dac.Net.Core
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
             }
-            
+            db?.Close();
         }
 
         /// <summary>
@@ -119,6 +127,26 @@ namespace Dac.Net.Core
             }
 
             OutPut?.Invoke($"[{db?.GetName()}]");
+            ShowTableDiff(diff);
+            ShowViewDiff(diff);
+            ShowSynonymDiff(diff);
+
+            OutPut?.Invoke("");
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="diff"></param>
+        private void ShowTableDiff(Diff diff)
+        {
+            if (!diff.AddedTables.Any() && !diff.DeletedTableNames.Any() && !diff.ModifiedTables.Any())
+            {
+                return;
+            }
+            
+            OutPut?.Invoke("* tables");
             foreach (var (tableName, table) in diff.AddedTables)
             {
                 //  console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `+ ${tableName}`);
@@ -241,8 +269,52 @@ namespace Dac.Net.Core
 
                 }
             }
+        }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="diff"></param>
+        private void ShowViewDiff(Diff diff)
+        {
+            if (!diff.AddedViews.Any() && !diff.DeletedViewNames.Any() && !diff.ModifiedViews.Any())
+            {
+                return;
+            }
+            OutPut?.Invoke("* views");
+            foreach (var (viewName, definition) in diff.AddedViews)
+            {
+                //  console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `+ ${tableName}`);
+                OutPut?.Invoke($"+ {viewName}");
+            }
 
+            foreach (var viewName in diff.DeletedViewNames)
+            {
+                OutPut?.Invoke($"- {viewName}");
+                //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
+            }
+            
+            foreach (var (viewName, definitions) in diff.ModifiedViews)
+            {
+                OutPut?.Invoke($"# {viewName}");
+                OutPut?.Invoke($"  {definitions[0]} -> {definitions[1]}");
+                //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="diff"></param>
+        private void ShowSynonymDiff(Diff diff)
+        {
+            if (!diff.AddedSynonyms.Any() && !diff.DeletedSynonymNames.Any() && !diff.ModifiedSynonyms.Any())
+            {
+                return;
+            }
+            
+            OutPut?.Invoke("* synonyms");
+            
             foreach (var (synonymName, synonym) in diff.AddedSynonyms)
             {
                 //  console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `+ ${tableName}`);
@@ -272,9 +344,6 @@ namespace Dac.Net.Core
                 }
                 //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
             }
-            
-            OutPut?.Invoke("");
-
         }
 
         /// <summary>
@@ -356,9 +425,17 @@ namespace Dac.Net.Core
         {
             db?.Connect();
             var result = db?.Update(_commandLine.DataBase, _commandLine.Query, _commandLine.Drop);
-            db?.Close();
+            
+            
             if (result.Success)
             {
+                if (_commandLine.OverWrite)
+                {
+                    var extractDb = db?.Extract();
+                    var yaml = Utility.DataBaseToYaml(extractDb);
+                    File.WriteAllText(_commandLine.InputFile, yaml);
+                }
+                
                 if (string.IsNullOrWhiteSpace(result.Query))
                 {
                     OutPut?.Invoke($"[{db?.GetName()}] nothing to do");
@@ -383,6 +460,8 @@ namespace Dac.Net.Core
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
             }
+            
+            db?.Close();
         }
 
         /// <summary>
@@ -393,9 +472,16 @@ namespace Dac.Net.Core
         {
             db?.Connect();
             var result = db?.ReCreate(_commandLine.DataBase, _commandLine.Query);
-            db?.Close();
+            
             if (result.Success)
             {
+                if (_commandLine.OverWrite)
+                {
+                    var extractDb = db?.Extract();
+                    var yaml = Utility.DataBaseToYaml(extractDb);
+                    File.WriteAllText(_commandLine.InputFile, yaml);
+                }
+                
                 if(_commandLine.Query)
                 {
                     OutPut?.Invoke($"{result.Query}");
@@ -416,6 +502,7 @@ namespace Dac.Net.Core
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
             }
+            db?.Close();
         }
     }
 }

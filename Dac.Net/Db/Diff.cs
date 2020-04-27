@@ -14,11 +14,14 @@ namespace Dac.Net.Db
         public List<string> DeletedSynonymNames { get; set; } = new List<string>();
         public Dictionary<string, Synonym[]> ModifiedSynonyms { get; set; } = new Dictionary<string, Synonym[]>();
         
+        public Dictionary<string, string> AddedViews { get; set; } = new Dictionary<string, string>();
+        public List<string> DeletedViewNames { get; set; } = new List<string>();
+        public Dictionary<string, string[]> ModifiedViews { get; set; } = new Dictionary<string, string[]>();
         
         public DataBase CurrentDb { get; set; }
         public DataBase NewDb { get; set; }
 
-        public bool HasDiff => AddedTables.Any() || DeletedTableNames.Any() || ModifiedTables.Any() || AddedSynonyms.Any() || DeletedSynonymNames.Any() || ModifiedSynonyms.Any();
+        public bool HasDiff => AddedTables.Any() || DeletedTableNames.Any() || ModifiedTables.Any() || AddedSynonyms.Any() || DeletedSynonymNames.Any() || ModifiedSynonyms.Any() || AddedViews.Any() || DeletedViewNames.Any() || ModifiedViews.Any();
 
         public Diff()
         {
@@ -123,7 +126,7 @@ namespace Dac.Net.Db
             // synonyms
             var currentSynonyms = CurrentDb.Synonyms ?? new Dictionary<string, Synonym>();
             var newSynonyms = NewDb.Synonyms ?? new Dictionary<string, Synonym>();
-            foreach (var synonymName in currentSynonyms.Keys.Concat(newSynonyms.Keys))
+            foreach (var synonymName in currentSynonyms.Keys.Concat(newSynonyms.Keys).Distinct())
             {
                 if (!newSynonyms.ContainsKey(synonymName))
                 {
@@ -139,6 +142,29 @@ namespace Dac.Net.Db
                     {
                         currentSynonyms[synonymName],
                         newSynonyms[synonymName]
+                    });
+                }
+            }
+            
+            // views
+            var currentViews = CurrentDb.Views ?? new Dictionary<string, string>();
+            var newViews = NewDb.Views ?? new Dictionary<string, string>();
+            foreach (var viewName in currentViews.Keys.Concat(newViews.Keys).Distinct())
+            {
+                if (!newViews.ContainsKey(viewName))
+                {
+                    DeletedViewNames.Add(viewName);
+                }
+                else if (!currentViews.ContainsKey(viewName))
+                {
+                    AddedViews.Add(viewName, newViews[viewName]);
+                }
+                else if (currentViews[viewName] != newViews[viewName])
+                {
+                    ModifiedViews.Add(viewName, new[]
+                    {
+                        currentViews[viewName],
+                        newViews[viewName]
                     });
                 }
             }
