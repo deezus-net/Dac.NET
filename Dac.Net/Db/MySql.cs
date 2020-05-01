@@ -47,7 +47,7 @@ namespace Dac.Net.Db
             {
                 queries.AppendLine($"DROP TABLE IF EXISTS `{tableName}`;");
             }
-            foreach (var (viewName, definition) in db.Views)
+            foreach (var (viewName, definition) in db.Views ?? new Dictionary<string, string>())
             {
                 queries.AppendLine($"DROP VIEW IF EXISTS `{viewName}`;");
             }
