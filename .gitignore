@@ -1,0 +1,5 @@
+bin
+obj
+.docker
+.TestData
+publish

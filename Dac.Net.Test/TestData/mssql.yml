@@ -1,0 +1,68 @@
+tables:
+  users:
+    columns:
+      id:
+        id: true
+      name:
+        type: nvarchar
+        length: 100
+        notNull: true
+  #    address:
+  #      type: nvarchar
+  #      length: max
+      group_id:
+        type: int
+        notNull: true
+        foreignKeys:
+          fk_groups:
+            table: groups
+            column: id
+      location:
+        type: geography
+        notNull: true
+      modified:
+        type: datetime
+        notNull: true
+      created:
+        type: datetime
+        notNull: true
+        default: GETDATE()
+    indices:
+      IX_location:
+        type: spatial
+        columns:
+          location:
+        spatial:
+          tessellationSchema: GEOGRAPHY_AUTO_GRID
+          cellsPerObject: 12
+      IX_name:
+        type: nonclustered
+        columns:
+          name: asc
+
+  
+  groups:
+    columns:
+      id:
+        id: true
+      name:
+        type: nvarchar
+        length: 150
+        notNull: true
+  configs:
+    columns:
+      id:
+        id: true
+      value:
+        type: nvarchar
+        length: 30
+        notNull: true
+#views:
+#  vUser: SELECT u.id, u.name, g.name group_name FROM users u INNER JOIN groups g ON u.group_id = g.id
+#  vUser2: SELECT u.id, u.name, g.name group_name FROM users u INNER JOIN groups g ON u.group_id = g.id
+
+#synonyms:
+#  spt_monitor:
+#    database: master
+#    schema: dbo
+#    object: users
