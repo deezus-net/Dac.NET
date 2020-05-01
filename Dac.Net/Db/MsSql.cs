@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -1157,10 +1158,42 @@ namespace Dac.Net.Db
             {
                 try
                 {
-                    using (var cmd = new SqlCommand(queryResult.Query, trn.Connection, trn))
+                    var reader = new StringReader(queryResult.Query);
+                    var bat = new StringBuilder();
+                    while (reader.Peek() > -1)
                     {
-                        cmd.ExecuteNonQuery();
+                        var line = (reader.ReadLine() ?? "").Trim();
+                        if (string.IsNullOrWhiteSpace(line))
+                        {
+                            continue;
+                        }
+
+                        if (line.ToLower() != "go")
+                        {
+                            bat.AppendLine(line);
+                            continue;
+                        }
+
+                        using (var cmd = new SqlCommand(bat.ToString(), trn.Connection, trn))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        bat.Clear();
                     }
+
+                    if (bat.Length > 0)
+                    {
+                        using (var cmd = new SqlCommand(bat.ToString(), trn.Connection, trn))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+
+
+
+
                 }
                 catch (Exception e)
                 {

@@ -78,7 +78,7 @@ namespace Dac.Net.Test.Db
 
             var sql = new MsSql(server, false);
             sql.Connect();
-            var result = sql.ReCreate(db, true);
+            var result = sql.ReCreate(db, false);
             _output.WriteLine(result.Query);
             Assert.True(result.Success);
         }
