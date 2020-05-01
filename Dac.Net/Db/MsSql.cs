@@ -74,6 +74,16 @@ namespace Dac.Net.Db
                 queries.AppendLine($"DROP TABLE IF EXISTS [{tableName}];");
             }
 
+            foreach (var (viewName, view) in db.Views ?? new Dictionary<string, string>())
+            {
+                queries.AppendLine($"DROP VIEW IF EXISTS [{viewName}];");
+            }
+            
+            foreach (var (synonymName, synonym) in db.Synonyms ?? new Dictionary<string, Synonym>())
+            {
+                queries.AppendLine($"DROP SYNONYM IF EXISTS [{synonymName}];");
+            }
+            
             queryResult.Query = queries.ToString();
             if (queryOnly)
             {
@@ -998,21 +1008,6 @@ namespace Dac.Net.Db
 
             return $"{query}\n{fkQuery}\n{synonymQuery}\n{viewQuery}";
             
-        }
-
-        
-        private string CreateSynonymQuery(Dictionary<string, Synonym> synonyms)
-        {
-            var query = new StringBuilder();
-            foreach (var (synonymName, synonym) in (synonyms ?? new Dictionary<string, Synonym>()))
-            {
-                var objectName = $"{((!string.IsNullOrWhiteSpace(synonym.Database) ? $"[{synonym.Database}]." : ""))}" +
-                                 $"{((!string.IsNullOrWhiteSpace(synonym.Schema) ? $"[{synonym.Schema}]." : ""))}" +
-                                 $"[{synonym.Object}]";
-                query.AppendLine($"CREATE SYNONYM [{synonymName}] FOR {objectName}");
-            }
-
-            return query.ToString();
         }
 
         /// <summary>

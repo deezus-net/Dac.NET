@@ -57,9 +57,9 @@ tables:
         type: nvarchar
         length: 30
         notNull: true
-views:
-  vUser: SELECT u.id, u.name, g.name group_name FROM users u INNER JOIN groups g ON u.group_id = g.id
-  vUser2: SELECT u.id, u.name, g.name group_name FROM users u INNER JOIN groups g ON u.group_id = g.id
+#views:
+#  vUser: SELECT u.id, u.name, g.name group_name FROM users u INNER JOIN groups g ON u.group_id = g.id
+#  vUser2: SELECT u.id, u.name, g.name group_name FROM users u INNER JOIN groups g ON u.group_id = g.id
 
 #synonyms:
 #  spt_monitor:
