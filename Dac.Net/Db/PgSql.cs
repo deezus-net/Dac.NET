@@ -45,6 +45,10 @@ namespace Dac.Net.Db
             {
                 queries.AppendLine($"DROP TABLE IF EXISTS \"{tableName}\" CASCADE;");
             }
+            foreach (var (viewName, definition) in db.Views)
+            {
+                queries.AppendLine($"DROP VIEW IF EXISTS \"{viewName}\";");
+            }
 
             queryResult.Query = queries.ToString();
 
