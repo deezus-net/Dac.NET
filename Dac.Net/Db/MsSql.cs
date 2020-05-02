@@ -819,7 +819,7 @@ namespace Dac.Net.Db
                 }
             }
             
-            // add synonym
+            // add synonyms
             query.AppendLine(CreateQuery(new DataBase() {Synonyms = diff.AddedSynonyms}));
             
             // drop synonyms
@@ -835,9 +835,27 @@ namespace Dac.Net.Db
                 query.AppendLine(CreateQuery(new DataBase()
                     {Synonyms = new Dictionary<string, Synonym>() {{synonymName, synonyms[1]}}}));
             }
+            
+            // add views
+            query.AppendLine(CreateQuery(new DataBase() { Views = diff.AddedViews }));
+            
+            // drop views
+            foreach (var viewName in diff.DeletedViewNames)
+            {
+                query.AppendLine($"DROP VIEW [{viewName}];");
+            }
+            
+            // modified views
+            foreach (var (viewName, definitions) in diff.ModifiedViews)
+            {
+                query.AppendLine($"DROP VIEW [{viewName}];");
+                query.AppendLine(CreateQuery(new DataBase()
+                    {Views = new Dictionary<string, string>() {{viewName, definitions[1]}}}));
+            }
 
-            queryResult.Query = string.Join("\n", dropFkQuery) + "\n" + query.ToString() + "\n" +
-                         string.Join("\n", createFkQuery);
+
+            queryResult.Query = string.Join("\n", dropFkQuery) + "\n" + query + "\n" +
+                                string.Join("\n", createFkQuery);
 
             if (queryOnly)
             {
@@ -1005,8 +1023,33 @@ namespace Dac.Net.Db
                                  $"[{synonym.Object}]";
                 synonymQuery.AppendLine($"CREATE SYNONYM [{synonymName}] FOR {objectName};");
             }
+            
+            var procedureQuery = new StringBuilder();
+            if (db.Procedures?.Any() ?? false)
+            {
+                foreach (var (procedureName, procedure) in (db.Procedures ?? new Dictionary<string, Procedure>()))
+                {
+                    viewQuery.AppendLine("GO");
+                    procedureQuery.AppendLine($"CREATE PROCEDURE [{procedureName}]");
+                    var args = new List<string>();
+                    foreach (var (argName, type) in procedure.Inputs)
+                    {
+                        args.Add($"@{argName} {type}");
+                    }
 
-            return $"{query}\n{fkQuery}\n{synonymQuery}\n{viewQuery}";
+                    if (procedure.Output.Any())
+                    {
+                        args.Add($"@{procedure.Output.First().Key} {procedure.Output.First().Value} OUT");
+                    }
+
+                    procedureQuery.AppendLine(string.Join(",\n", args));
+                    procedureQuery.AppendLine("AS");
+                    procedureQuery.AppendLine(procedure.Content);
+
+                }
+            }
+
+            return $"{query}\n{fkQuery}\n{synonymQuery}\n{viewQuery}\n{procedureQuery}";
             
         }
 
