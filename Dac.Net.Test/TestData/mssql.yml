@@ -27,7 +27,7 @@ tables:
         type: datetime
         notNull: true
         default: GETDATE()
-    indices:
+    indexes:
       IX_location:
         type: spatial
         columns:

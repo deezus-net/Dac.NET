@@ -25,7 +25,7 @@ tables:
         type: timestamp
         notNull: true
         default: CURRENT_TIMESTAMP
-    indices:
+    indexes:
       IX_name:
         columns:
           name: asc

@@ -24,7 +24,7 @@ tables:
         type: timestamp
         notNull: true
         default: NOW()
-    indices:
+    indexes:
       IX_name:
         columns:
           name: asc

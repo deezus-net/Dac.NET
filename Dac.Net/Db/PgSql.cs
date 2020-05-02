@@ -166,9 +166,9 @@ namespace Dac.Net.Db
                 {
                     var indexDef = row.Field<string>("indexdef");
                     var indexName = row.Field<string>("indexname");
-                    if (!tables[tableName].Indices.ContainsKey(indexName))
+                    if (!tables[tableName].Indexes.ContainsKey(indexName))
                     {
-                        tables[tableName].Indices.Add(indexName, new Index()
+                        tables[tableName].Indexes.Add(indexName, new Index()
                         {
                             Unique = indexDef.Contains("UNIQUE INDEX")
                         });
@@ -181,22 +181,10 @@ namespace Dac.Net.Db
                         foreach (var col in m.Groups[1].Value.Split(",")) {
                             var tmp = col.Trim().Split(" ");
                             if (table.Columns.ContainsKey(tmp[0])) {
-                                table.Indices[indexName].Columns.Add(tmp[0], tmp.Length > 1 ? tmp[1] : "ASC");
+                                table.Indexes[indexName].Columns.Add(tmp[0], tmp.Length > 1 ? tmp[1] : "ASC");
                             }
                         }
                     }
-
-/*
-                const m = (indexdef.match(/\(.*\)/) || [])[0];
-                if (!m) {
-                    continue;
-                }
-                for (const col of m.replace('(', '').replace(')', '').split(',')) {
-                    const tmp = col.trim().split(' ');
-                    if (tables[tableName].columns[tmp[0]]) {
-                        tables[tableName].indexes[indexName].columns[tmp[0]] = tmp.Length > 1 ? tmp[1] : 'ASC';
-                    }
-                }*/
                 }
 
                 // remove primarykey index
@@ -209,7 +197,7 @@ namespace Dac.Net.Db
                     }
                 }
 
-                foreach (var (indexName, index) in table.Indices)
+                foreach (var (indexName, index) in table.Indexes)
                 {
                     var columns = new List<string>();
                     foreach (var (columnName, column) in index.Columns)
@@ -219,7 +207,7 @@ namespace Dac.Net.Db
 
                     if (string.Join("__", columns) == string.Join("__", pkColumns))
                     {
-                        table.Indices.Remove(indexName);
+                        table.Indexes.Remove(indexName);
                     }
                 }
 
@@ -539,14 +527,14 @@ namespace Dac.Net.Db
                 }
 
                 // create index
-                foreach (var (indexName, index) in table.AddedIndices)
+                foreach (var (indexName, index) in table.AddedIndexes)
                 {
                     query.AppendLine(
                         $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX \"{indexName}\" ON \"{tableName}\" ({string.Join(",", index.Columns.Select(x => $"\"{x}\""))});");
                 }
 
                 // modify index
-                foreach (var (indexName, index) in table.ModifiedIndices)
+                foreach (var (indexName, index) in table.ModifiedIndexes)
                 {
 
                     query.AppendLine($"DROP INDEX \"{indexName}\";");
@@ -738,7 +726,7 @@ namespace Dac.Net.Db
 
                 query.AppendLine(");");
 
-                foreach (var (indexName, index) in (table.Indices ?? new Dictionary<string, Index>()))
+                foreach (var (indexName, index) in (table.Indexes ?? new Dictionary<string, Index>()))
                 {
                     query.AppendLine(
                         $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX \"{indexName}\" ON \"{tableName}\"(");

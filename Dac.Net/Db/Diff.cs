@@ -86,34 +86,33 @@ namespace Dac.Net.Db
                     }
 
                     // indexes
-                    var currentIndices = CurrentDb.Tables[tableName].Indices ?? new Dictionary<string, Index>();
-                    var newIndices = NewDb.Tables[tableName].Indices ?? new Dictionary<string, Index>();
+                    var currentIndexes = CurrentDb.Tables[tableName].Indexes ?? new Dictionary<string, Index>();
+                    var newIndexes = NewDb.Tables[tableName].Indexes ?? new Dictionary<string, Index>();
 
-                    var indexNames = currentIndices.Keys.Concat(newIndices.Keys).Distinct();
+                    var indexNames = currentIndexes.Keys.Concat(newIndexes.Keys).Distinct();
 
                     foreach (var indexName in indexNames)
                     {
-                        if (!newIndices.ContainsKey(indexName))
+                        if (!newIndexes.ContainsKey(indexName))
                         {
                             InitModifiedTable(tableName);
                             ModifiedTables[tableName].DeletedIndexNames.Add(indexName);
 
                         }
-                        else if (!currentIndices.ContainsKey(indexName))
+                        else if (!currentIndexes.ContainsKey(indexName))
                         {
                             InitModifiedTable(tableName);
-                            ModifiedTables[tableName].AddedIndices.Add(indexName, newIndices[indexName]);
+                            ModifiedTables[tableName].AddedIndexes.Add(indexName, newIndexes[indexName]);
 
                         }
-                        else if (!newIndices[indexName]
-                            .Equals(currentIndices[indexName]))
+                        else if (!newIndexes[indexName]
+                            .Equals(currentIndexes[indexName]))
                         {
                             InitModifiedTable(tableName);
-                            //     NewDb.Tables[tableName].Indices[indexName].Name = indexName;
-                            ModifiedTables[tableName].ModifiedIndices[indexName] = new[]
+                            ModifiedTables[tableName].ModifiedIndexes[indexName] = new[]
                             {
-                                currentIndices[indexName],
-                                newIndices[indexName]
+                                currentIndexes[indexName],
+                                newIndexes[indexName]
                             };
 
                         }
@@ -186,8 +185,8 @@ namespace Dac.Net.Db
         public Dictionary<string, Column> AddedColumns { get; set; } = new Dictionary<string, Column>();
         public Dictionary<string, Column[]> ModifiedColumns { get; set; } = new Dictionary<string, Column[]>();
         public List<string> DeletedColumnName { get; set; } = new List<string>();
-        public Dictionary<string, Index> AddedIndices { get; set; } = new Dictionary<string, Index>();
-        public Dictionary<string, Index[]> ModifiedIndices { get; set; } = new Dictionary<string, Index[]>();
+        public Dictionary<string, Index> AddedIndexes { get; set; } = new Dictionary<string, Index>();
+        public Dictionary<string, Index[]> ModifiedIndexes { get; set; } = new Dictionary<string, Index[]>();
         public List<string> DeletedIndexNames { get; set; } = new List<string>();
     }
 
