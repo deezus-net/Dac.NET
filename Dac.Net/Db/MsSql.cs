@@ -484,6 +484,8 @@ namespace Dac.Net.Db
                 definition = Utility.TrimQuery(definition);
                 views.Add(row.Field<string>("name"), definition.Trim());
             }
+            
+            
 
             var db = new DataBase() {Tables = tables, Synonyms = synonyms, Views = views };
             Utility.TrimDataBaseProperties(db);

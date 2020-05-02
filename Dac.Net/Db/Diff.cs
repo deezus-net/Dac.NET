@@ -14,9 +14,16 @@ namespace Dac.Net.Db
         public List<string> DeletedSynonymNames { get; set; } = new List<string>();
         public Dictionary<string, Synonym[]> ModifiedSynonyms { get; set; } = new Dictionary<string, Synonym[]>();
         
+        // views
         public Dictionary<string, string> AddedViews { get; set; } = new Dictionary<string, string>();
         public List<string> DeletedViewNames { get; set; } = new List<string>();
         public Dictionary<string, string[]> ModifiedViews { get; set; } = new Dictionary<string, string[]>();
+        
+        // procedures
+        public Dictionary<string, Procedure> AddedProcedures { get; set; } = new Dictionary<string, Procedure>();
+        public List<string> DeletedProcedureNames { get; set; } = new List<string>();
+        public Dictionary<string, Procedure[]> ModifiedProcedures { get; set; } = new Dictionary<string, Procedure[]>();
+        
         
         public DataBase CurrentDb { get; set; }
         public DataBase NewDb { get; set; }
@@ -165,6 +172,29 @@ namespace Dac.Net.Db
                     {
                         currentViews[viewName],
                         newViews[viewName]
+                    });
+                }
+            }
+            
+            // procedures
+            var currentProcedures = CurrentDb.Procedures ?? new Dictionary<string, Procedure>();
+            var newProcedures = NewDb.Procedures ?? new Dictionary<string, Procedure>();
+            foreach (var proceduresName in currentProcedures.Keys.Concat(newProcedures.Keys).Distinct())
+            {
+                if (!newProcedures.ContainsKey(proceduresName))
+                {
+                    DeletedProcedureNames.Add(proceduresName);
+                }
+                else if (!currentProcedures.ContainsKey(proceduresName))
+                {
+                    AddedProcedures.Add(proceduresName, newProcedures[proceduresName]);
+                }
+                else if (!currentProcedures[proceduresName].Equals(newProcedures[proceduresName]))
+                {
+                    ModifiedProcedures.Add(proceduresName, new[]
+                    {
+                        currentProcedures[proceduresName],
+                        newProcedures[proceduresName]
                     });
                 }
             }
