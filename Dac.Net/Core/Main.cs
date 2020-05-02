@@ -216,7 +216,7 @@ namespace Dac.Net.Core
                     }
                 }
 
-                foreach (var (indexName, index) in table.AddedIndices)
+                foreach (var (indexName, index) in table.AddedIndexes)
                 {
                     OutPut?.Invoke($"  + {indexName}");
                     // console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `  + ${indexName}`);
@@ -228,7 +228,7 @@ namespace Dac.Net.Core
                     //     console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `  - ${indexName}`);
                 }
 
-                foreach (var (indexName, indices) in table.ModifiedIndices)
+                foreach (var (indexName, indices) in table.ModifiedIndexes)
                 {
                     var orgIndex = indices[0];
                     var newIndex = indices[1];

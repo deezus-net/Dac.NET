@@ -123,9 +123,9 @@ namespace Dac.Net.Core
 
                 }
 
-                if (table.Indices != null)
+                if (table.Indexes != null)
                 {
-                    foreach (var (indexName, index) in table.Indices)
+                    foreach (var (indexName, index) in table.Indexes)
                     {
                         if (!(index.Unique ?? false))
                         {
@@ -144,9 +144,9 @@ namespace Dac.Net.Core
 
                     }
 
-                    if (!table.Indices.Any())
+                    if (!table.Indexes.Any())
                     {
-                        table.Indices = null;
+                        table.Indexes = null;
                     }
                 }
             }

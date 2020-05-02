@@ -132,7 +132,7 @@ namespace Dac.Net.Test.Db
                                     }
                                 }
                             },
-                            Indices = new Dictionary<string, Index>()
+                            Indexes = new Dictionary<string, Index>()
                             {
                                 { "ix_name", new Index()
                                 {
@@ -167,7 +167,7 @@ namespace Dac.Net.Test.Db
                                     }
                                 }
                             },
-                            Indices = new Dictionary<string, Index>()
+                            Indexes = new Dictionary<string, Index>()
                             {
                                 { "ix_name", new Index()
                                 {
@@ -246,7 +246,7 @@ namespace Dac.Net.Test.Db
                                     }
                                 }
                             },
-                            Indices = new Dictionary<string, Index>()
+                            Indexes = new Dictionary<string, Index>()
                             {
                                 { "ix_name", new Index()
                                 {

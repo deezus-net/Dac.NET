@@ -94,8 +94,6 @@ namespace Dac.Net.Db
                 {
                     var type = row.Field<string>("Type");
                     var length = 0;
-                  //  let length = parseInt((type.match(/\(([0-9]+)\)/) || [])[1] || 0, 10);
-                  //  type = type.replace(/\([0-9]+\)/, '');
 
                     var m = Regex.Match(type, @"\(([0-9]+)\)");
                     if (m.Success)
@@ -202,9 +200,9 @@ namespace Dac.Net.Db
 
                     var nonUnique = row.Field<long>("Non_unique");
                     var collation = row.Field<string>("Collation");
-                    if (!table.Indices.ContainsKey(indexName))
+                    if (!table.Indexes.ContainsKey(indexName))
                     {
-                        tables[tableName].Indices.Add(indexName, new Index()
+                        tables[tableName].Indexes.Add(indexName, new Index()
                         {
                             Unique = nonUnique == 0
                         });
@@ -212,12 +210,12 @@ namespace Dac.Net.Db
 
                     if (row.Field<string>("Index_type") == "FULLTEXT")
                     {
-                        table.Indices[indexName].Type = "fulltext";
-                        table.Indices[indexName].Columns.Add(row.Field<string>("Column_name"), "ASC");
+                        table.Indexes[indexName].Type = "fulltext";
+                        table.Indexes[indexName].Columns.Add(row.Field<string>("Column_name"), "ASC");
                     }
                     else
                     {
-                        table.Indices[indexName].Columns.Add(row.Field<string>("Column_name"),
+                        table.Indexes[indexName].Columns.Add(row.Field<string>("Column_name"),
                             collation == "A" ? "ASC" : "DESC");
                     }
                 }
@@ -441,14 +439,14 @@ namespace Dac.Net.Db
                 }
 
                 // create index
-                foreach (var (indexName, index) in table.AddedIndices)
+                foreach (var (indexName, index) in table.AddedIndexes)
                 {
                     query.AppendLine(
                         $"ALTER TABLE `{tableName}` ADD {((index.Unique ?? false) ? "UNIQUE " : "")}{((index.Type ?? "").ToLower() == "fulltext" ? "FULLTEXT " : "")}INDEX `{indexName}` ({string.Join(",", index.Columns.Select(x => $"`{x.Key}` {x.Value}"))}));");
                 }
 
                 // modify index
-                foreach (var (indexName, columns) in table.ModifiedIndices)
+                foreach (var (indexName, columns) in table.ModifiedIndexes)
                 {
                     var index = columns[1];
                     query.AppendLine(
@@ -639,11 +637,11 @@ namespace Dac.Net.Db
                     query.AppendLine("    PRIMARY KEY");
                     query.AppendLine("    (");
                     query.AppendLine(string.Join(",\n", pk.Select(x => $"        `{x}`")));
-                    query.AppendLine($"    ){((table.Indices?.Any() ?? false) ? "," : "")}");
+                    query.AppendLine($"    ){((table.Indexes?.Any() ?? false) ? "," : "")}");
                 }
 
                 var indexQuery = new StringBuilder();
-                foreach (var (indexName, index) in (table.Indices ?? new Dictionary<string, Index>()))
+                foreach (var (indexName, index) in (table.Indexes ?? new Dictionary<string, Index>()))
                 {
                     indexQuery.AppendLine(
                         $"    {((index.Unique ?? false) ? "UNIQUE " : "")}{((index.Type ?? "").ToLower() == "fulltext" ? "FULLTEXT " : "")}INDEX `{indexName}`({string.Join(",", index.Columns.Select(x => $"`{x.Key}` {x.Value}"))})");

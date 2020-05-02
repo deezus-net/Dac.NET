@@ -104,7 +104,7 @@ namespace Dac.Net.Db
             var tables = new Dictionary<string, Table>();
 
             var columns = new Dictionary<string, Dictionary<string, Column>>();
-            var indices = new Dictionary<string, Dictionary<string, Index>>();
+            var indexes = new Dictionary<string, Dictionary<string, Index>>();
             var pk = new Dictionary<string, List<string>>();
 
             var query = @"
@@ -158,9 +158,9 @@ namespace Dac.Net.Db
                     pk.Add(tableName, new List<string>());
                 }
 
-                if (!indices.ContainsKey(tableName))
+                if (!indexes.ContainsKey(tableName))
                 {
-                    indices.Add(tableName, new Dictionary<string, Index>());
+                    indexes.Add(tableName, new Dictionary<string, Index>());
                 }
 
                 if (row.Field<bool>("is_primary_key"))
@@ -171,17 +171,17 @@ namespace Dac.Net.Db
                 else
                 {
                     var indexName = row.Field<string>("index_name");
-                    if (!indices[tableName].ContainsKey(indexName))
+                    if (!indexes[tableName].ContainsKey(indexName))
                     {
-                        indices[tableName].Add(indexName, new Index() {Unique = row.Field<bool>("is_unique"), Type = row.Field<string>("type_desc")});
+                        indexes[tableName].Add(indexName, new Index() {Unique = row.Field<bool>("is_unique"), Type = row.Field<string>("type_desc")});
                     }
 
                     var type = row.Field<string>("type_desc").ToLower();
 
                     if (type == "spatial")
                     {
-                        indices[tableName][indexName].Columns[row.Field<string>("column_name")] = "";
-                        indices[tableName][indexName].Spatial = new Spatial()
+                        indexes[tableName][indexName].Columns[row.Field<string>("column_name")] = "";
+                        indexes[tableName][indexName].Spatial = new Spatial()
                         {
                             TessellationSchema = row.Field<string>("tessellation_scheme"),
                             Level1 = row.Field<string>("level_1_grid_desc"),
@@ -194,7 +194,7 @@ namespace Dac.Net.Db
                     }
                     else
                     {
-                        indices[tableName][indexName].Columns[row.Field<string>("column_name")] =
+                        indexes[tableName][indexName].Columns[row.Field<string>("column_name")] =
                             row.Field<bool>("is_descending_key") ? "desc" : "asc";
                     }
                     
@@ -282,7 +282,7 @@ namespace Dac.Net.Db
                 tables.Add(tableName, new Table()
                 {
                     Columns = columns.ContainsKey(tableName) ? columns[tableName] : new Dictionary<string, Column>(),
-                    Indices = indices.ContainsKey(tableName) ? indices[tableName] : new Dictionary<string, Index>()
+                    Indexes = indexes.ContainsKey(tableName) ? indexes[tableName] : new Dictionary<string, Index>()
                 });
             }
 
@@ -674,7 +674,7 @@ namespace Dac.Net.Db
                     var newColumn = columns[1];
 
                     // if change execute alter
-                    foreach (var (indexName, index ) in (orgTable.Indices ?? new Dictionary<string, Index>()).Where(x =>
+                    foreach (var (indexName, index ) in (orgTable.Indexes ?? new Dictionary<string, Index>()).Where(x =>
                         x.Value.Columns.ContainsKey(columnName))
                     )
                     {
@@ -774,29 +774,20 @@ namespace Dac.Net.Db
                 }
 
                 // create index
-                foreach (var (indexName, index) in table.AddedIndices)
+                foreach (var (indexName, index) in table.AddedIndexes)
                 {
                     query.AppendLine(IndexQuery(tableName, indexName, index));
-                   // query.AppendLine(
-                   //     $"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX [{indexName}] ON [{tableName}]({string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});");
                 }
 
                 // modify index
-                foreach (var (indexName, indices) in table.ModifiedIndices)
+                foreach (var (indexName, indices) in table.ModifiedIndexes)
                 {
                     var index = indices[1];
                     if (!droppedIndexNames.Contains(indexName))
                     {
                         query.AppendLine($"DROP INDEX [{tableName}].[{indexName}];");
                     }
-
                     query.AppendLine(IndexQuery(tableName, indexName, index));
-                    
-                   /* query.AppendLine("CREATE");
-                    query.AppendLine($"    {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX [{indexName}]");
-                    query.AppendLine("ON");
-                    query.AppendLine(
-                        $"    [dbo].[{tableName}](${string.Join(",", index.Columns.Select(x => $"[{x.Key}] {x.Value}"))});"); */
                 }
 
                 // drop index
@@ -970,16 +961,10 @@ namespace Dac.Net.Db
                 query.AppendLine(");");
 
                 var num = 1;
-                foreach (var (indexName, index) in (table.Indices ?? new Dictionary<string, Index>()))
+                foreach (var (indexName, index) in (table.Indexes ?? new Dictionary<string, Index>()))
                 {
                     var name = !string.IsNullOrWhiteSpace(indexName) ? indexName : $"INDEX_{tableName}_${num++}";
-
                     query.AppendLine(IndexQuery(tableName, name, index));
-                    /*
-                    query.AppendLine($"CREATE {((index.Unique ?? false) ? "UNIQUE " : "")}INDEX [{name}] ON [dbo].[{tableName}](");
-                    query.AppendLine(
-                        $"    {string.Join(",", index.Columns.Keys.Select(c => $"[{c}] {index.Columns[c]}"))}");
-                    query.AppendLine(");");*/
                 }
 
             }
