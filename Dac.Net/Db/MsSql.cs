@@ -790,7 +790,7 @@ namespace Dac.Net.Db
                     var index = indices[1];
                     if (!droppedIndexNames.Contains(indexName))
                     {
-                        query.AppendLine($"DROP INDEX [{tableName}].[{indexName}];");
+                        query.AppendLine($"DROP INDEX [{indexName}] ON [{tableName}];");
                     }
                     query.AppendLine(IndexQuery(tableName, indexName, index));
                 }
@@ -800,7 +800,7 @@ namespace Dac.Net.Db
                 {
                     if (!droppedIndexNames.Contains(indexName))
                     {
-                        query.AppendLine($"DROP INDEX [{tableName}].[{indexName}];");
+                        query.AppendLine($"DROP INDEX [{indexName}] ON [{tableName}];");
                     }
                 }
 
