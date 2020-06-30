@@ -209,7 +209,9 @@ namespace Dac.Net.Db
                 c.max_length,
                 c.is_nullable ,
                 c.is_identity,
-                type.max_length AS type_max_length
+                type.max_length AS type_max_length,
+                c.precision,
+                c.scale
             FROM
                 sys.tables AS t 
             INNER JOIN
@@ -261,6 +263,9 @@ namespace Dac.Net.Db
                     case "int":
                     case "datetime":
                         lengthString = "0";
+                        break;
+                    case "numeric":
+                        lengthString = $"{row.Field<byte>("precision")},{row.Field<byte>("scale")}";
                         break;
                 }
 

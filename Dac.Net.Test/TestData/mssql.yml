@@ -10,6 +10,9 @@ tables:
   #    address:
   #      type: nvarchar
   #      length: max
+      number:
+        type: numeric
+        length: 5,3
       group_id:
         type: int
         notNull: true
