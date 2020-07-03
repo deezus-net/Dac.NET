@@ -6,6 +6,8 @@ namespace Dac.Net.Db
 {
     public class Column
     {
+       
+        
         public string DisplayName { get; set; }
         public string Type { get; set; }
         public string Length { get; set; }
@@ -23,7 +25,7 @@ namespace Dac.Net.Db
 
         [YamlIgnore]
         public int LengthInt => int.TryParse(Length, out var length) ? length : int.MaxValue;
-
+        public string ColumnId { get; set; }
         public bool Equals(Column target)
         {
             // foreign key check

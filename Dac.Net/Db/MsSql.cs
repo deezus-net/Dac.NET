@@ -106,6 +106,7 @@ namespace Dac.Net.Db
             var columns = new Dictionary<string, Dictionary<string, Column>>();
             var indexes = new Dictionary<string, Dictionary<string, Index>>();
             var pk = new Dictionary<string, List<string>>();
+            var tableIds = new Dictionary<string,string>();
 
             var query = @"
                 SELECT
@@ -114,6 +115,7 @@ namespace Dac.Net.Db
                     col.name AS column_name,
                     i.is_primary_key,
                     c.is_descending_key,
+                    i.index_id,
                     i.is_unique,
                     i.type_desc,
                     sit.tessellation_scheme,
@@ -173,7 +175,12 @@ namespace Dac.Net.Db
                     var indexName = row.Field<string>("index_name");
                     if (!indexes[tableName].ContainsKey(indexName))
                     {
-                        indexes[tableName].Add(indexName, new Index() {Unique = row.Field<bool>("is_unique"), Type = row.Field<string>("type_desc")});
+                        indexes[tableName].Add(indexName,
+                            new Index()
+                            {
+                                IndexId = Convert.ToString(row.Field<int>("index_id")),
+                                Unique = row.Field<bool>("is_unique"), Type = row.Field<string>("type_desc")
+                            });
                     }
 
                     var type = row.Field<string>("type_desc").ToLower();
@@ -204,7 +211,9 @@ namespace Dac.Net.Db
             query = @"
             SELECT
                 t.name AS table_name,
+                t.object_id AS table_id,
                 c.name AS column_name,
+                c.column_id AS column_id,
                 type.name AS type,
                 c.max_length,
                 c.is_nullable ,
@@ -231,6 +240,10 @@ namespace Dac.Net.Db
             foreach (DataRow row in GetResult(query).Rows)
             {
                 var tableName = row.Field<string>("table_name");
+                if (!tableIds.ContainsKey(tableName))
+                {
+                    tableIds.Add(tableName, Convert.ToString(row.Field<int>("table_id")));
+                }
                 if (!columns.ContainsKey(tableName))
                 {
                     columns.Add(tableName, new Dictionary<string, Column>());
@@ -273,6 +286,7 @@ namespace Dac.Net.Db
                     row.Field<string>("column_name"),
                     new Column()
                     {
+                        ColumnId = Convert.ToString(row.Field<int>("column_id")),
                         Id = row.Field<bool>("is_identity"),
                         Type = row.Field<string>("type"),
                         Length = lengthString,
@@ -286,6 +300,7 @@ namespace Dac.Net.Db
             {
                 tables.Add(tableName, new Table()
                 {
+                    TableId = tableIds[tableName],
                     Columns = columns.ContainsKey(tableName) ? columns[tableName] : new Dictionary<string, Column>(),
                     Indexes = indexes.ContainsKey(tableName) ? indexes[tableName] : new Dictionary<string, Index>()
                 });

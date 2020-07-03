@@ -1,17 +1,20 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace Dac.Net.Db
 {
     public class Index
     {
+        
         public string Name { get; set; }
         public string Type { get; set; }
-        public Dictionary<string, string> Columns = new Dictionary<string, string>();
-        public bool? Unique { get; set; }
         
+        public bool? Unique { get; set; }
+        public Dictionary<string, string> Columns = new Dictionary<string, string>();
         public Spatial Spatial { get; set; }
 
+        public string IndexId { get; set; }
         public bool Equals(Index target)
         {
             var col1 = string.Join("__", Columns.Select(x => $"{x.Key},{x.Value}"));
