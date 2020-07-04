@@ -1,12 +1,12 @@
 tables:
-  configs2:
+  configs:
     columns:
       id:
         id: true
         columnId: 1
       value:
         type: nvarchar
-        length: 30
+        length: 40
         notNull: true
         columnId: 2
     tableId: 821577965
@@ -64,10 +64,8 @@ tables:
         spatial:
           tessellationSchema: GEOGRAPHY_AUTO_GRID
           cellsPerObject: 12
-        indexId: 384000
       IX_name:
         columns:
           name: asc
         type: nonclustered
-        indexId: 2
     tableId: 725577623
