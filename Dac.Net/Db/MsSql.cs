@@ -668,7 +668,11 @@ namespace Dac.Net.Db
                 var (currentTableName, newTableName) = table.Name;
                 if (currentTableName != newTableName)
                 {
-                    query.AppendLine($"ALTER TABLE [{currentTableName}] RENAME TO [{newTableName}];");
+                    query.AppendLine($"EXEC sp_rename '{currentTableName}', {newTableName}, 'OBJECT';");
+                }
+                else
+                {
+                    currentTableName = tableName;
                 }
                 
                 var orgTable = diff.CurrentDb.Tables[!string.IsNullOrWhiteSpace(currentTableName) ? currentTableName : tableName];
@@ -701,6 +705,12 @@ namespace Dac.Net.Db
                 {
                     var orgColumn = columns[0];
                     var newColumn = columns[1];
+                    
+                    // rename
+                    if (orgColumn.Name != newColumn.Name)
+                    {
+                        query.AppendLine($"EXEC sp_rename '{tableName}.{orgColumn.Name}', {newColumn.Name}, 'COLUMN';");
+                    }
 
                     // if change execute alter
                     foreach (var (indexName, index ) in (orgTable.Indexes ?? new Dictionary<string, Index>()).Where(x =>
@@ -724,7 +734,12 @@ namespace Dac.Net.Db
                     var check = !string.IsNullOrWhiteSpace(newColumn.Check) ? $" CHECK({newColumn.Check}) " : "";
                     var def = !string.IsNullOrWhiteSpace(newColumn.Default) ? $" DEFAULT {newColumn.Default} " : "";
 
-                    query.AppendLine($"ALTER TABLE [{tableName}] ALTER COLUMN [{columnName}] {type}{((newColumn.Id ?? false) ? " IDENTITY" : "")}{((newColumn.NotNull ?? false) ? " NOT NULL" : "")};");
+                    if (orgColumn.Type != newColumn.Type || orgColumn.Id != newColumn.Id ||
+                        orgColumn.Length != newColumn.Length || orgColumn.NotNull != newColumn.NotNull)
+                    {
+                        query.AppendLine(
+                            $"ALTER TABLE [{tableName}] ALTER COLUMN [{columnName}] {type}{((newColumn.Id ?? false) ? " IDENTITY" : "")}{((newColumn.NotNull ?? false) ? " NOT NULL" : "")};");
+                    }
 
                     if (orgColumn.Default != newColumn.Default)
                     {
@@ -793,7 +808,7 @@ namespace Dac.Net.Db
                 // drop columns
                 foreach (var columnName in table.DeletedColumnName)
                 {
-                    if (!string.IsNullOrWhiteSpace(diff.CurrentDb.Tables[tableName].Columns[columnName].DefaultName))
+                    if (!string.IsNullOrWhiteSpace(diff.CurrentDb.Tables[currentTableName].Columns[columnName].DefaultName))
                     {
                         query.AppendLine($"ALTER TABLE [{tableName}] DROP CONSTRAINT [{diff.CurrentDb.Tables[tableName].Columns[columnName].DefaultName}];");
                     }

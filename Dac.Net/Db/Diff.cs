@@ -45,7 +45,8 @@ namespace Dac.Net.Db
                 value.Name = key;
                 if (string.IsNullOrWhiteSpace(value.TableId))
                 {
-                    value.TableId = key;
+                    var tableId = NewDb.Tables.ContainsKey(key) ? NewDb.Tables[key].TableId : "";
+                    value.TableId = !string.IsNullOrWhiteSpace(tableId) ? tableId : key;
                 }
                 return value;
             }).ToList();
@@ -56,7 +57,8 @@ namespace Dac.Net.Db
                 value.Name = key;
                 if (string.IsNullOrWhiteSpace(value.TableId))
                 {
-                    value.TableId = key;
+                    var tableId = CurrentDb.Tables.ContainsKey(key) ? CurrentDb.Tables[key].TableId : "";
+                    value.TableId = !string.IsNullOrWhiteSpace(tableId) ? tableId : key;;
                 }
                 return value;
             }).ToList();
@@ -88,32 +90,56 @@ namespace Dac.Net.Db
                     }
                     
                     // columns
-                    var columnNames = currentTable.Columns.Keys
-                        .Concat(newTable.Columns.Keys).Distinct();
-
-                    foreach (var columnName in columnNames)
+                    var currentColumns = currentTable.Columns.Select(x =>
                     {
-                        if (!newTable.Columns.ContainsKey(columnName))
+                        var (key, value) = x;
+                        value.Name = key;
+                        if (string.IsNullOrWhiteSpace(value.ColumnId))
+                        {
+                            value.ColumnId = key;
+                        }
+                        return x.Value;
+                    }).ToList();
+                    
+                    var newColumns = newTable.Columns.Select(x =>
+                    {
+                        var (key, value) = x;
+                        value.Name = key;
+                        if (string.IsNullOrWhiteSpace(value.ColumnId))
+                        {
+                            value.ColumnId = key;
+                        }
+                        return x.Value;
+                    }).ToList();
+                    
+                    var columnIds = currentColumns.Select(x => x.ColumnId).Concat(newColumns.Select(x => x.ColumnId)).Distinct()
+                        .ToList();
+
+                    foreach (var columnId in columnIds)
+                    {
+                        var currentColumn = currentColumns.FirstOrDefault(x => x.ColumnId == columnId);
+                        var newColumn = newColumns.FirstOrDefault(x => x.ColumnId == columnId);
+                        
+                        if (newColumn == null)
                         {
                             InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].DeletedColumnName.Add(columnName);
+                            ModifiedTables[newTable.Name].DeletedColumnName.Add(currentColumn.Name);
 
                         }
-                        else if (!currentTable.Columns.ContainsKey(columnName))
+                        else if (currentColumn == null)
                         {
                             InitModifiedTable(newTable.Name);
                             ModifiedTables[newTable.Name].AddedColumns
-                                .Add(columnName, newTable.Columns[columnName]);
+                                .Add(newColumn.Name, newColumn);
 
                         }
-                        else if (!currentTable.Columns[columnName]
-                            .Equals(newTable.Columns[columnName]))
+                        else if (!currentColumn.Equals(newColumn))
                         {
                             InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].ModifiedColumns[columnName] = new[]
+                            ModifiedTables[newTable.Name].ModifiedColumns[newColumn.Name] = new[]
                             {
-                                currentTable.Columns[columnName],
-                                newTable.Columns[columnName]
+                                currentColumn,
+                                newColumn
                             };
                         }
                     }
