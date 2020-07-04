@@ -664,7 +664,16 @@ namespace Dac.Net.Db
 
             foreach (var (tableName, table) in diff.ModifiedTables)
             {
-                var orgTable = diff.CurrentDb.Tables[tableName];
+                // rename
+                var (currentTableName, newTableName) = table.Name;
+                if (currentTableName != newTableName)
+                {
+                    query.AppendLine($"ALTER TABLE [{currentTableName}] RENAME TO [{newTableName}];");
+                }
+                
+                var orgTable = diff.CurrentDb.Tables[!string.IsNullOrWhiteSpace(currentTableName) ? currentTableName : tableName];
+                
+                
 
                 // add columns
                 foreach (var (columnName, column) in table.AddedColumns)
