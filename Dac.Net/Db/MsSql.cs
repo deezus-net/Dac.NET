@@ -824,9 +824,20 @@ namespace Dac.Net.Db
                 }
 
                 // modify index
-                foreach (var (indexName, indices) in table.ModifiedIndexes)
+                foreach (var (indexName, indexes) in table.ModifiedIndexes)
                 {
-                    var index = indices[1];
+                    // rename
+                    var orgIndex = indexes[0];
+                    var newIndex = indexes[1];
+                    
+                    // rename
+                    if (orgIndex.Name != newIndex.Name)
+                    {
+                        query.AppendLine($"EXEC sp_rename '{tableName}.{orgIndex.Name}', {newIndex.Name}, 'INDEX';");
+                    }
+                    
+                    
+                    var index = indexes[1];
                     if (!droppedIndexNames.Contains(indexName))
                     {
                         query.AppendLine($"DROP INDEX [{indexName}] ON [{tableName}];");

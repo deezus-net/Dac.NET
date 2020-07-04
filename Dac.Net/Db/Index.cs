@@ -20,7 +20,7 @@ namespace Dac.Net.Db
             var col1 = string.Join("__", Columns.Select(x => $"{x.Key},{x.Value}"));
             var col2 = string.Join("__", target.Columns.Select(x => $"{x.Key},{x.Value}"));
             var spacial = (Spatial ?? new Spatial()).Equals(target.Spatial ?? new Spatial());
-            return Unique == target.Unique && Type == target.Type && col1 == col2 && spacial;
+            return Name == target.Name && Unique == target.Unique && Type == target.Type && col1 == col2 && spacial;
         }
 
     }

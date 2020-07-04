@@ -96,20 +96,22 @@ namespace Dac.Net.Db
                         value.Name = key;
                         if (string.IsNullOrWhiteSpace(value.ColumnId))
                         {
-                            value.ColumnId = key;
+                            var columnId = newTable.Columns.ContainsKey(key) ? newTable.Columns[key].ColumnId : "";
+                            value.ColumnId = !string.IsNullOrWhiteSpace(columnId) ? columnId : key;
                         }
-                        return x.Value;
+                        return value;
                     }).ToList();
-                    
+            
                     var newColumns = newTable.Columns.Select(x =>
                     {
                         var (key, value) = x;
                         value.Name = key;
                         if (string.IsNullOrWhiteSpace(value.ColumnId))
                         {
-                            value.ColumnId = key;
+                            var columnId = currentTable.Columns.ContainsKey(key) ? currentTable.Columns[key].ColumnId : "";
+                            value.ColumnId = !string.IsNullOrWhiteSpace(columnId) ? columnId : key;;
                         }
-                        return x.Value;
+                        return value;
                     }).ToList();
                     
                     var columnIds = currentColumns.Select(x => x.ColumnId).Concat(newColumns.Select(x => x.ColumnId)).Distinct()
@@ -145,33 +147,61 @@ namespace Dac.Net.Db
                     }
 
                     // indexes
-                    var currentIndexes = currentTable.Indexes ?? new Dictionary<string, Index>();
-                    var newIndexes = newTable.Indexes ?? new Dictionary<string, Index>();
+                    //var currentIndexes = currentTable.Indexes ?? new Dictionary<string, Index>();
+                    //var newIndexes = newTable.Indexes ?? new Dictionary<string, Index>();
 
-                    var indexNames = currentIndexes.Keys.Concat(newIndexes.Keys).Distinct();
-
-                    foreach (var indexName in indexNames)
+                    var currentIndexes = (currentTable.Indexes ?? new Dictionary<string, Index>()).Select(x =>
                     {
-                        if (!newIndexes.ContainsKey(indexName))
+                        var (key, value) = x;
+                        value.Name = key;
+                        if (string.IsNullOrWhiteSpace(value.IndexId))
+                        {
+                            var indexId = newTable.Indexes.ContainsKey(key) ? newTable.Indexes[key].IndexId : "";
+                            value.IndexId = !string.IsNullOrWhiteSpace(indexId) ? indexId : key;
+                        }
+                        return value;
+                    }).ToList();
+            
+                    var newIndexes = (newTable.Indexes ?? new Dictionary<string, Index>()).Select(x =>
+                    {
+                        var (key, value) = x;
+                        value.Name = key;
+                        if (string.IsNullOrWhiteSpace(value.IndexId))
+                        {
+                            var indexId = currentTable.Indexes.ContainsKey(key) ? currentTable.Indexes[key].IndexId : "";
+                            value.IndexId = !string.IsNullOrWhiteSpace(indexId) ? indexId : key;;
+                        }
+                        return value;
+                    }).ToList();
+                    
+                    var indexIds = currentIndexes.Select(x => x.IndexId).Concat(newIndexes.Select(x => x.IndexId)).Distinct()
+                        .ToList();
+                    
+
+                    foreach (var indexId in indexIds)
+                    {
+                        var currentIndex = currentIndexes.FirstOrDefault(x => x.IndexId == indexId);
+                        var newIndex = newIndexes.FirstOrDefault(x => x.IndexId == indexId);
+                        
+                        if (newIndex == null)
                         {
                             InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].DeletedIndexNames.Add(indexName);
+                            ModifiedTables[newTable.Name].DeletedIndexNames.Add(currentIndex.Name);
 
                         }
-                        else if (!currentIndexes.ContainsKey(indexName))
+                        else if (currentIndex == null)
                         {
                             InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].AddedIndexes.Add(indexName, newIndexes[indexName]);
+                            ModifiedTables[newTable.Name].AddedIndexes.Add(newIndex.Name, newIndex);
 
                         }
-                        else if (!newIndexes[indexName]
-                            .Equals(currentIndexes[indexName]))
+                        else if (!currentIndex.Equals(newIndex))
                         {
                             InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].ModifiedIndexes[indexName] = new[]
+                            ModifiedTables[newTable.Name].ModifiedIndexes[newIndex.Name] = new[]
                             {
-                                currentIndexes[indexName],
-                                newIndexes[indexName]
+                                currentIndex,
+                                newIndex
                             };
 
                         }
