@@ -88,13 +88,10 @@ namespace Dac.Net.Test.Db
         {
             var server = Utility.LoadServers("TestData/servers.yml")["mssql"];
             var db = Utility.LoadDataBase("TestData/mssql.yml");
-            
-            
-            
-                
+  
             var sql = new MsSql(server, false);
             var res = sql.Connect();
-            sql.ReCreate(db, false);
+         //   sql.ReCreate(db, false);
             Utility.TrimDataBaseProperties(db);
             var diff = sql.Diff(db);
             Assert.False(diff.HasDiff);
@@ -109,7 +106,7 @@ namespace Dac.Net.Test.Db
             
             var sql = new MsSql(server, false);
             sql.Connect();
-            var result = sql.Update(db, true, false);
+            var result = sql.Update(db, true, true);
             _output.WriteLine(result.Query ?? "");
             Assert.True(result.Success);
         }

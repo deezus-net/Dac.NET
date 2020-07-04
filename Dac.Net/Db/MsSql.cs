@@ -106,6 +106,7 @@ namespace Dac.Net.Db
             var columns = new Dictionary<string, Dictionary<string, Column>>();
             var indexes = new Dictionary<string, Dictionary<string, Index>>();
             var pk = new Dictionary<string, List<string>>();
+            var tableIds = new Dictionary<string,string>();
 
             var query = @"
                 SELECT
@@ -173,7 +174,11 @@ namespace Dac.Net.Db
                     var indexName = row.Field<string>("index_name");
                     if (!indexes[tableName].ContainsKey(indexName))
                     {
-                        indexes[tableName].Add(indexName, new Index() {Unique = row.Field<bool>("is_unique"), Type = row.Field<string>("type_desc")});
+                        indexes[tableName].Add(indexName,
+                            new Index()
+                            {
+                                Unique = row.Field<bool>("is_unique"), Type = row.Field<string>("type_desc")
+                            });
                     }
 
                     var type = row.Field<string>("type_desc").ToLower();
@@ -204,7 +209,9 @@ namespace Dac.Net.Db
             query = @"
             SELECT
                 t.name AS table_name,
+                t.object_id AS table_id,
                 c.name AS column_name,
+                c.column_id AS column_id,
                 type.name AS type,
                 c.max_length,
                 c.is_nullable ,
@@ -231,6 +238,10 @@ namespace Dac.Net.Db
             foreach (DataRow row in GetResult(query).Rows)
             {
                 var tableName = row.Field<string>("table_name");
+                if (!tableIds.ContainsKey(tableName))
+                {
+                    tableIds.Add(tableName, Convert.ToString(row.Field<int>("table_id")));
+                }
                 if (!columns.ContainsKey(tableName))
                 {
                     columns.Add(tableName, new Dictionary<string, Column>());
@@ -273,6 +284,7 @@ namespace Dac.Net.Db
                     row.Field<string>("column_name"),
                     new Column()
                     {
+                        ColumnId = Convert.ToString(row.Field<int>("column_id")),
                         Id = row.Field<bool>("is_identity"),
                         Type = row.Field<string>("type"),
                         Length = lengthString,
@@ -286,6 +298,7 @@ namespace Dac.Net.Db
             {
                 tables.Add(tableName, new Table()
                 {
+                    TableId = tableIds[tableName],
                     Columns = columns.ContainsKey(tableName) ? columns[tableName] : new Dictionary<string, Column>(),
                     Indexes = indexes.ContainsKey(tableName) ? indexes[tableName] : new Dictionary<string, Index>()
                 });
@@ -649,7 +662,20 @@ namespace Dac.Net.Db
 
             foreach (var (tableName, table) in diff.ModifiedTables)
             {
-                var orgTable = diff.CurrentDb.Tables[tableName];
+                // rename
+                var (currentTableName, newTableName) = table.Name;
+                if (currentTableName != newTableName)
+                {
+                    query.AppendLine($"EXEC sp_rename '{currentTableName}', {newTableName}, 'OBJECT';");
+                }
+                else
+                {
+                    currentTableName = tableName;
+                }
+                
+                var orgTable = diff.CurrentDb.Tables[!string.IsNullOrWhiteSpace(currentTableName) ? currentTableName : tableName];
+                
+                
 
                 // add columns
                 foreach (var (columnName, column) in table.AddedColumns)
@@ -677,6 +703,12 @@ namespace Dac.Net.Db
                 {
                     var orgColumn = columns[0];
                     var newColumn = columns[1];
+                    
+                    // rename
+                    if (orgColumn.Name != newColumn.Name)
+                    {
+                        query.AppendLine($"EXEC sp_rename '{tableName}.{orgColumn.Name}', {newColumn.Name}, 'COLUMN';");
+                    }
 
                     // if change execute alter
                     foreach (var (indexName, index ) in (orgTable.Indexes ?? new Dictionary<string, Index>()).Where(x =>
@@ -700,7 +732,12 @@ namespace Dac.Net.Db
                     var check = !string.IsNullOrWhiteSpace(newColumn.Check) ? $" CHECK({newColumn.Check}) " : "";
                     var def = !string.IsNullOrWhiteSpace(newColumn.Default) ? $" DEFAULT {newColumn.Default} " : "";
 
-                    query.AppendLine($"ALTER TABLE [{tableName}] ALTER COLUMN [{columnName}] {type}{((newColumn.Id ?? false) ? " IDENTITY" : "")}{((newColumn.NotNull ?? false) ? " NOT NULL" : "")};");
+                    if (orgColumn.Type != newColumn.Type || orgColumn.Id != newColumn.Id ||
+                        orgColumn.Length != newColumn.Length || orgColumn.NotNull != newColumn.NotNull)
+                    {
+                        query.AppendLine(
+                            $"ALTER TABLE [{tableName}] ALTER COLUMN [{columnName}] {type}{((newColumn.Id ?? false) ? " IDENTITY" : "")}{((newColumn.NotNull ?? false) ? " NOT NULL" : "")};");
+                    }
 
                     if (orgColumn.Default != newColumn.Default)
                     {
@@ -769,7 +806,7 @@ namespace Dac.Net.Db
                 // drop columns
                 foreach (var columnName in table.DeletedColumnName)
                 {
-                    if (!string.IsNullOrWhiteSpace(diff.CurrentDb.Tables[tableName].Columns[columnName].DefaultName))
+                    if (!string.IsNullOrWhiteSpace(diff.CurrentDb.Tables[currentTableName].Columns[columnName].DefaultName))
                     {
                         query.AppendLine($"ALTER TABLE [{tableName}] DROP CONSTRAINT [{diff.CurrentDb.Tables[tableName].Columns[columnName].DefaultName}];");
                     }

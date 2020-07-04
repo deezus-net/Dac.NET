@@ -6,6 +6,8 @@ namespace Dac.Net.Db
 {
     public class Column
     {
+       
+        
         public string DisplayName { get; set; }
         public string Type { get; set; }
         public string Length { get; set; }
@@ -23,6 +25,11 @@ namespace Dac.Net.Db
 
         [YamlIgnore]
         public int LengthInt => int.TryParse(Length, out var length) ? length : int.MaxValue;
+        
+        [YamlIgnore]
+        public string Name { get; set; }
+        
+        public string ColumnId { get; set; }
 
         public bool Equals(Column target)
         {
@@ -49,14 +56,16 @@ namespace Dac.Net.Db
                 }
             }
 
-            return Type?.ToLower() == target.Type?.ToLower() &&
-                   Length?.ToLower() == target.Length?.ToLower() &&
-                   NotNull == target.NotNull &&
-                   Id == target.Id &&
-                   Default?.ToLower() == target.Default?.ToLower() &&
-                   Check == target.Check &&
-                   string.Join(",", fk1.Keys) == string.Join(",", fk2.Keys) &&
-                   !fkDiff;
+            return
+                Name == target.Name &&
+                Type?.ToLower() == target.Type?.ToLower() &&
+                Length?.ToLower() == target.Length?.ToLower() &&
+                NotNull == target.NotNull &&
+                Id == target.Id &&
+                Default?.ToLower() == target.Default?.ToLower() &&
+                Check == target.Check &&
+                string.Join(",", fk1.Keys) == string.Join(",", fk2.Keys) &&
+                !fkDiff;
 
 
 

@@ -1,18 +1,40 @@
 tables:
+  configs2:
+    columns:
+      id:
+        id: true
+        columnId: 1
+      value:
+        type: nvarchar
+        length: 30
+        notNull: true
+        columnId: 2
+    tableId: 821577965
+  groups:
+    columns:
+      id:
+        id: true
+        columnId: 1
+      name:
+        type: nvarchar
+        length: 150
+        notNull: true
+        columnId: 2
+    tableId: 789577851
   users:
     columns:
       id:
         id: true
+        columnId: 1
       name:
         type: nvarchar
         length: 100
         notNull: true
-  #    address:
-  #      type: nvarchar
-  #      length: max
+        columnId: 2
       number:
         type: numeric
         length: 5,3
+        columnId: 3
       group_id:
         type: int
         notNull: true
@@ -20,52 +42,32 @@ tables:
           fk_groups:
             table: groups
             column: id
+        columnId: 4
       location:
         type: geography
         notNull: true
+        columnId: 5
       modified:
         type: datetime
         notNull: true
+        columnId: 6
       created:
         type: datetime
         notNull: true
-        default: GETDATE()
+        default: getdate()
+        columnId: 7
     indexes:
       IX_location:
-        type: spatial
         columns:
-          location:
+          location: ''
+        type: spatial
         spatial:
           tessellationSchema: GEOGRAPHY_AUTO_GRID
           cellsPerObject: 12
+        indexId: 384000
       IX_name:
-        type: nonclustered
         columns:
           name: asc
-
-  
-  groups:
-    columns:
-      id:
-        id: true
-      name:
-        type: nvarchar
-        length: 150
-        notNull: true
-  configs:
-    columns:
-      id:
-        id: true
-      value:
-        type: nvarchar
-        length: 30
-        notNull: true
-#views:
-#  vUser: SELECT u.id, u.name, g.name group_name FROM users u INNER JOIN groups g ON u.group_id = g.id
-#  vUser2: SELECT u.id, u.name, g.name group_name FROM users u INNER JOIN groups g ON u.group_id = g.id
-
-#synonyms:
-#  spt_monitor:
-#    database: master
-#    schema: dbo
-#    object: users
+        type: nonclustered
+        indexId: 2
+    tableId: 725577623
