@@ -6,21 +6,20 @@ namespace Dac.Net.Db
 {
     public class Index
     {
-        
+
         public string Name { get; set; }
         public string Type { get; set; }
-        
+
         public bool? Unique { get; set; }
         public Dictionary<string, string> Columns = new Dictionary<string, string>();
         public Spatial Spatial { get; set; }
 
-        public string IndexId { get; set; }
         public bool Equals(Index target)
         {
             var col1 = string.Join("__", Columns.Select(x => $"{x.Key},{x.Value}"));
             var col2 = string.Join("__", target.Columns.Select(x => $"{x.Key},{x.Value}"));
             var spacial = (Spatial ?? new Spatial()).Equals(target.Spatial ?? new Spatial());
-            return Name == target.Name && Unique == target.Unique && Type == target.Type && col1 == col2 && spacial;
+            return Unique == target.Unique && Type == target.Type && col1 == col2 && spacial;
         }
 
     }

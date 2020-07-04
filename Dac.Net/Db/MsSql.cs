@@ -115,7 +115,6 @@ namespace Dac.Net.Db
                     col.name AS column_name,
                     i.is_primary_key,
                     c.is_descending_key,
-                    i.index_id,
                     i.is_unique,
                     i.type_desc,
                     sit.tessellation_scheme,
@@ -178,7 +177,6 @@ namespace Dac.Net.Db
                         indexes[tableName].Add(indexName,
                             new Index()
                             {
-                                IndexId = Convert.ToString(row.Field<int>("index_id")),
                                 Unique = row.Field<bool>("is_unique"), Type = row.Field<string>("type_desc")
                             });
                     }
@@ -824,20 +822,9 @@ namespace Dac.Net.Db
                 }
 
                 // modify index
-                foreach (var (indexName, indexes) in table.ModifiedIndexes)
+                foreach (var (indexName, indices) in table.ModifiedIndexes)
                 {
-                    // rename
-                    var orgIndex = indexes[0];
-                    var newIndex = indexes[1];
-                    
-                    // rename
-                    if (orgIndex.Name != newIndex.Name)
-                    {
-                        query.AppendLine($"EXEC sp_rename '{tableName}.{orgIndex.Name}', {newIndex.Name}, 'INDEX';");
-                    }
-                    
-                    
-                    var index = indexes[1];
+                    var index = indices[1];
                     if (!droppedIndexNames.Contains(indexName))
                     {
                         query.AppendLine($"DROP INDEX [{indexName}] ON [{tableName}];");
