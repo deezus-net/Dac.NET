@@ -3,38 +3,29 @@ tables:
     columns:
       id:
         id: true
-        columnId: 1
       value:
         type: nvarchar
         length: 40
         notNull: true
-        columnId: 2
-    tableId: 821577965
   groups:
     columns:
       id:
         id: true
-        columnId: 1
       name:
         type: nvarchar
         length: 150
         notNull: true
-        columnId: 2
-    tableId: 789577851
   users:
     columns:
       id:
         id: true
-        columnId: 1
       name:
         type: nvarchar
         length: 100
         notNull: true
-        columnId: 2
       number:
         type: numeric
         length: 5,3
-        columnId: 3
       group_id:
         type: int
         notNull: true
@@ -42,20 +33,16 @@ tables:
           fk_groups:
             table: groups
             column: id
-        columnId: 4
       location:
         type: geography
         notNull: true
-        columnId: 5
       modified:
         type: datetime
         notNull: true
-        columnId: 6
       created:
         type: datetime
         notNull: true
         default: getdate()
-        columnId: 7
     indexes:
       IX_location:
         columns:
@@ -68,4 +55,3 @@ tables:
         columns:
           name: asc
         type: nonclustered
-    tableId: 725577623
