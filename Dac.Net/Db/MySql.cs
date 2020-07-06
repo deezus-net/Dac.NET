@@ -93,18 +93,18 @@ namespace Dac.Net.Db
                 foreach (DataRow row in GetResult($"DESCRIBE {tableName}").Rows)
                 {
                     var type = row.Field<string>("Type");
-                    var length = 0;
+                    var length = "0";
 
-                    var m = Regex.Match(type, @"\(([0-9]+)\)");
+                    var m = Regex.Match(type, @"\(([0-9,]+)\)");
                     if (m.Success)
                     {
-                        int.TryParse(m.Groups[1].Value, out length);
-                        type = Regex.Replace(type, @"\(([0-9]+)\)", "");
+                        length = m.Groups[1].Value;
+                        type = Regex.Replace(type, @"\(([0-9,]+)\)", "");
                     }
                     
                     if (type == "int")
                     {
-                        length = 0;
+                        length = "0";
                     }
 
                     var column = new Column()
