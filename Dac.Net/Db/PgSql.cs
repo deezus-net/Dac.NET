@@ -68,10 +68,13 @@ namespace Dac.Net.Db
         {
             var tables = new Dictionary<string, Table>();
 
-            foreach (DataRow row in GetResult("SELECT relname FROM \"pg_stat_user_tables\" WHERE schemaname='public'")
+
+            foreach (DataRow row in GetResult(
+                    "SELECT relname, relid FROM \"pg_stat_user_tables\" WHERE schemaname='public'")
                 .Rows)
             {
-                tables.Add(row.Field<string>("relname"), new Table());
+                tables.Add(row.Field<string>("relname"),
+                    new Table() {TableId = Convert.ToString(row.Field<uint>("relid"))});
 
             }
 
@@ -87,6 +90,7 @@ namespace Dac.Net.Db
                 var query = @"
                     SELECT 
                         column_name, 
+                        dtd_identifier,
                         data_type, 
                         is_nullable, 
                         character_maximum_length, 
@@ -110,7 +114,8 @@ namespace Dac.Net.Db
                         Type = type,
                         Id = id,
                         Length = Convert.ToString(length),
-                        NotNull = row.Field<string>("is_nullable") == "NO"
+                        NotNull = row.Field<string>("is_nullable") == "NO",
+                        ColumnId = row.Field<string>("dtd_identifier")
                     };
                     if (!string.IsNullOrWhiteSpace(row.Field<string>("column_default")) && !id)
                     {
