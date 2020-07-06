@@ -412,7 +412,21 @@ namespace Dac.Net.Db
 
             foreach (var (tableName, table) in diff.ModifiedTables)
             {
-
+                // rename
+                var (currentTableName, newTableName) = table.Name;
+                if (currentTableName != newTableName)
+                {
+                    query.AppendLine($"ALTER TABLE \"{currentTableName}\" RENAME TO \"{newTableName}\";");
+                }
+                else
+                {
+                    currentTableName = tableName;
+                }
+                
+                var orgTable = diff.CurrentDb.Tables[!string.IsNullOrWhiteSpace(currentTableName) ? currentTableName : tableName];
+                
+                
+                
                 // add columns
                 foreach (var (columnName, column) in table.AddedColumns)
                 {
@@ -441,6 +455,12 @@ namespace Dac.Net.Db
                     var orgColumn = column[0];
                     var newColumn = column[1];
 
+                    // rename
+                    if (orgColumn.Name != newColumn.Name)
+                    {
+                        query.AppendLine($"ALTER TABLE \"{tableName}\" RENAME COLUMN \"{orgColumn.Name}\" to \"{newColumn.Name}\";");
+                    }
+                    
                     // change type
                     if (orgColumn.Type != newColumn.Type || orgColumn.Length != newColumn.Length)
                     {
