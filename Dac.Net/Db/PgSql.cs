@@ -94,6 +94,8 @@ namespace Dac.Net.Db
                         data_type, 
                         is_nullable, 
                         character_maximum_length, 
+                        numeric_precision,
+                        numeric_scale,
                         is_identity, 
                         column_default 
                     FROM 
@@ -105,7 +107,12 @@ namespace Dac.Net.Db
                 {
                     var id = sequences.Any(seq => (row.Field<string>("column_default") ?? "").Contains(seq));
                     var type = id ? "serial" : row.Field<string>("data_type");
-                    var length = row.Field<int?>("character_maximum_length") ?? 0;
+                    var length = Convert.ToString(row.Field<int?>("character_maximum_length") ?? 0);
+                    
+                    if (type == "numeric")
+                    {
+                        length = $"{row.Field<int>("numeric_precision")},{row.Field<int>("numeric_scale")}";
+                    }
 
                     type = Define.ColumnType.PgSql.ContainsKey(type) ? Define.ColumnType.PgSql[type] : type;
 
@@ -113,7 +120,7 @@ namespace Dac.Net.Db
                     {
                         Type = type,
                         Id = id,
-                        Length = Convert.ToString(length),
+                        Length = length,
                         NotNull = row.Field<string>("is_nullable") == "NO",
                         ColumnId = row.Field<string>("dtd_identifier")
                     };
