@@ -68,13 +68,10 @@ namespace Dac.Net.Db
         {
             var tables = new Dictionary<string, Table>();
 
-
-            foreach (DataRow row in GetResult(
-                    "SELECT relname, relid FROM \"pg_stat_user_tables\" WHERE schemaname='public'")
+            foreach (DataRow row in GetResult("SELECT relname FROM \"pg_stat_user_tables\" WHERE schemaname='public'")
                 .Rows)
             {
-                tables.Add(row.Field<string>("relname"),
-                    new Table() {TableId = Convert.ToString(row.Field<uint>("relid"))});
+                tables.Add(row.Field<string>("relname"), new Table());
 
             }
 
@@ -90,7 +87,6 @@ namespace Dac.Net.Db
                 var query = @"
                     SELECT 
                         column_name, 
-                        dtd_identifier,
                         data_type, 
                         is_nullable, 
                         character_maximum_length, 
@@ -120,9 +116,8 @@ namespace Dac.Net.Db
                     {
                         Type = type,
                         Id = id,
-                        Length = length,
-                        NotNull = row.Field<string>("is_nullable") == "NO",
-                        ColumnId = row.Field<string>("dtd_identifier")
+                        Length = Convert.ToString(length),
+                        NotNull = row.Field<string>("is_nullable") == "NO"
                     };
                     if (!string.IsNullOrWhiteSpace(row.Field<string>("column_default")) && !id)
                     {
@@ -425,21 +420,7 @@ namespace Dac.Net.Db
 
             foreach (var (tableName, table) in diff.ModifiedTables)
             {
-                // rename
-                var (currentTableName, newTableName) = table.Name;
-                if (currentTableName != newTableName)
-                {
-                    query.AppendLine($"ALTER TABLE \"{currentTableName}\" RENAME TO \"{newTableName}\";");
-                }
-                else
-                {
-                    currentTableName = tableName;
-                }
-                
-                var orgTable = diff.CurrentDb.Tables[!string.IsNullOrWhiteSpace(currentTableName) ? currentTableName : tableName];
-                
-                
-                
+
                 // add columns
                 foreach (var (columnName, column) in table.AddedColumns)
                 {
@@ -468,12 +449,6 @@ namespace Dac.Net.Db
                     var orgColumn = column[0];
                     var newColumn = column[1];
 
-                    // rename
-                    if (orgColumn.Name != newColumn.Name)
-                    {
-                        query.AppendLine($"ALTER TABLE \"{tableName}\" RENAME COLUMN \"{orgColumn.Name}\" to \"{newColumn.Name}\";");
-                    }
-                    
                     // change type
                     if (orgColumn.Type != newColumn.Type || orgColumn.Length != newColumn.Length)
                     {
