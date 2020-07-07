@@ -528,6 +528,7 @@ namespace Dac.Net.Db
         {
             var queryResult = new QueryResult();
             var queries = new StringBuilder();
+            queries.AppendLine(Utility.CreateQueryHeader(_server));
             queries.AppendLine($"USE [{_server.Database}];");
             queries.AppendLine(CreateQuery(db));
             queryResult.Query = queries.ToString();
@@ -550,6 +551,7 @@ namespace Dac.Net.Db
         {
             var queryResult = new QueryResult();
             var queries = new StringBuilder();
+            queries.AppendLine(Utility.CreateQueryHeader(_server));
             queries.AppendLine($"USE [{_server.Database}];");
 
             // get table and foreign key list
@@ -649,6 +651,9 @@ namespace Dac.Net.Db
             }
             
             var query = new StringBuilder();
+            query.AppendLine(Utility.CreateQueryHeader(_server));
+            query.AppendLine($"USE [{_server.Database}];");
+            
             var createFkQuery = new List<string>();
             var dropFkQuery = new List<string>();
 

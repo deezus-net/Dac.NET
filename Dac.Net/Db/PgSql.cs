@@ -352,9 +352,13 @@ namespace Dac.Net.Db
         /// <returns></returns>
         public QueryResult Create(DataBase db, bool queryOnly)
         {
+            var query = new StringBuilder();
+            query.AppendLine(Utility.CreateQueryHeader(_server));
+            query.AppendLine(CreateQuery(db));
+            
             var queryResult = new QueryResult()
             {
-                Query = CreateQuery(db)
+                Query = query.ToString()
             };
             if (queryOnly)
             {
@@ -377,6 +381,7 @@ namespace Dac.Net.Db
             var queryResult = new QueryResult();
             
             var query = new StringBuilder();
+            query.AppendLine(Utility.CreateQueryHeader(_server));
             var tables = new Dictionary<string, Table>();
             foreach (DataRow row in GetResult("SELECT relname FROM \"pg_stat_user_tables\" WHERE schemaname='public'")
                 .Rows)
@@ -407,6 +412,7 @@ namespace Dac.Net.Db
             }
 
             var query = new StringBuilder();
+            query.AppendLine(Utility.CreateQueryHeader(_server));
             var createFkQuery = new List<string>();
             var dropFkQuery = new List<string>();
 

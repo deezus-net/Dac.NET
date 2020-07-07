@@ -183,5 +183,10 @@ namespace Dac.Net.Core
             
             return result;
         }
+
+        public static string CreateQueryHeader(Server server)
+        {
+            return $"/* {server.Database} */";
+        }
     }
 }

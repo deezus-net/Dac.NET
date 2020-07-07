@@ -42,6 +42,7 @@ namespace Dac.Net.Db
             var queryResult = new QueryResult();
             var queries = new StringBuilder();
 
+            queries.AppendLine(Utility.CreateQueryHeader(_server));
             queries.AppendLine("SET FOREIGN_KEY_CHECKS = 0;");
             foreach (var (tableName, table) in db.Tables)
             {
@@ -261,9 +262,12 @@ namespace Dac.Net.Db
         /// <returns></returns>
         public QueryResult Create(DataBase db, bool queryOnly)
         {
+            var query = new StringBuilder();
+            query.AppendLine(Utility.CreateQueryHeader(_server));
+            query.AppendLine(CreateQuery(db));
             var queryResult = new QueryResult
             {
-                Query = CreateQuery(db)
+                Query = query.ToString()
             };
             if (queryOnly)
             {
@@ -300,6 +304,7 @@ namespace Dac.Net.Db
             }
 
             var query = new StringBuilder();
+            query.AppendLine(Utility.CreateQueryHeader(_server));
             if (tables.Any())
             {
                 query.AppendLine("SET FOREIGN_KEY_CHECKS = 0;");
@@ -340,6 +345,7 @@ namespace Dac.Net.Db
 
             var orgDb = diff.CurrentDb;
             var query = new StringBuilder();
+            query.AppendLine(Utility.CreateQueryHeader(_server));
             var createFkQuery = new List<string>();
             var dropFkQuery = new List<string>();
             // fk
@@ -600,7 +606,6 @@ namespace Dac.Net.Db
         private string CreateQuery(DataBase db)
         {
             var query = new StringBuilder();
-
             foreach (var (tableName, table) in db.Tables)
             {
 
