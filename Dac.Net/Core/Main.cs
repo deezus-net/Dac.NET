@@ -79,14 +79,6 @@ namespace Dac.Net.Core
             
             if (result.Success)
             {
-                if (_commandLine.OverWrite)
-                {
-                    var extractDb = db?.Extract();
-                    var yaml = Utility.DataBaseToYaml(extractDb);
-                    File.WriteAllText(_commandLine.InputFile, yaml);
-                }
-                
-                
                 if(_commandLine.Query)
                 {
                     OutPut?.Invoke($"{result.Query}");
@@ -435,13 +427,6 @@ namespace Dac.Net.Core
             
             if (result.Success)
             {
-                if (_commandLine.OverWrite)
-                {
-                    var extractDb = db?.Extract();
-                    var yaml = Utility.DataBaseToYaml(extractDb);
-                    File.WriteAllText(_commandLine.InputFile, yaml);
-                }
-                
                 if (string.IsNullOrWhiteSpace(result.Query))
                 {
                     OutPut?.Invoke($"[{db?.GetName()}] nothing to do");
@@ -481,13 +466,6 @@ namespace Dac.Net.Core
             
             if (result.Success)
             {
-                if (_commandLine.OverWrite)
-                {
-                    var extractDb = db?.Extract();
-                    var yaml = Utility.DataBaseToYaml(extractDb);
-                    File.WriteAllText(_commandLine.InputFile, yaml);
-                }
-                
                 if(_commandLine.Query)
                 {
                     OutPut?.Invoke($"{result.Query}");
