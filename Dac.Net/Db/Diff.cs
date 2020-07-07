@@ -39,122 +39,55 @@ namespace Dac.Net.Db
         public void Check()
         {
             // tables
-            var currentTables = CurrentDb.Tables.Select(x =>
+            var tableNames = CurrentDb.Tables.Keys.Concat(NewDb.Tables.Keys).Distinct();
+
+            foreach (var tableName in tableNames)
             {
-                var (key, value) = x;
-                value.Name = key;
-                if (string.IsNullOrWhiteSpace(value.TableId))
+                if (!NewDb.Tables.ContainsKey(tableName))
                 {
-                    var tableId = NewDb.Tables.ContainsKey(key) ? NewDb.Tables[key].TableId : "";
-                    value.TableId = !string.IsNullOrWhiteSpace(tableId) ? tableId : key;
+                    DeletedTableNames.Add(tableName);
                 }
-                return value;
-            }).ToList();
-            
-            var newTables = NewDb.Tables.Select(x =>
-            {
-                var (key, value) = x;
-                value.Name = key;
-                if (string.IsNullOrWhiteSpace(value.TableId))
+                else if (!CurrentDb.Tables.ContainsKey(tableName))
                 {
-                    var tableId = CurrentDb.Tables.ContainsKey(key) ? CurrentDb.Tables[key].TableId : "";
-                    value.TableId = !string.IsNullOrWhiteSpace(tableId) ? tableId : key;;
-                }
-                return value;
-            }).ToList();
+                    AddedTables.Add(tableName, NewDb.Tables[tableName]);
 
-            var tableIds = currentTables.Select(x => x.TableId).Concat(newTables.Select(x => x.TableId)).Distinct()
-                .ToList();
-
-
-            foreach (var tableId in tableIds)
-            {
-                var currentTable = currentTables.FirstOrDefault(x => x.TableId == tableId);
-                var newTable = newTables.FirstOrDefault(x => x.TableId == tableId);
-
-                if (newTable == null)
-                {
-                    DeletedTableNames.Add(currentTable.Name);
-                }
-                else if (currentTable == null)
-                {
-                    AddedTables.Add(newTable.Name, newTable);
                 }
                 else
                 {
-                    // table name
-                    if (currentTable.Name != newTable.Name)
-                    {
-                        InitModifiedTable(newTable.Name);
-                        ModifiedTables[newTable.Name].Name = (currentTable.Name, newTable.Name);
-                    }
-
                     // columns
-                    var currentColumns = currentTable.Columns.Select(x =>
+                    var columnNames = CurrentDb.Tables[tableName].Columns.Keys
+                        .Concat(NewDb.Tables[tableName].Columns.Keys).Distinct();
+
+                    foreach (var columnName in columnNames)
                     {
-                        var (key, value) = x;
-                        value.Name = key;
-                        if (string.IsNullOrWhiteSpace(value.ColumnId))
+                        if (!NewDb.Tables[tableName].Columns.ContainsKey(columnName))
                         {
-                            var columnId = newTable.Columns.ContainsKey(key) ? newTable.Columns[key].ColumnId : "";
-                            value.ColumnId = !string.IsNullOrWhiteSpace(columnId) ? columnId : key;
-                        }
-
-                        return value;
-                    }).ToList();
-
-                    var newColumns = newTable.Columns.Select(x =>
-                    {
-                        var (key, value) = x;
-                        value.Name = key;
-                        if (string.IsNullOrWhiteSpace(value.ColumnId))
-                        {
-                            var columnId = currentTable.Columns.ContainsKey(key)
-                                ? currentTable.Columns[key].ColumnId
-                                : "";
-                            value.ColumnId = !string.IsNullOrWhiteSpace(columnId) ? columnId : key;
-                            ;
-                        }
-
-                        return value;
-                    }).ToList();
-
-                    var columnIds = currentColumns.Select(x => x.ColumnId).Concat(newColumns.Select(x => x.ColumnId))
-                        .Distinct()
-                        .ToList();
-
-                    foreach (var columnId in columnIds)
-                    {
-                        var currentColumn = currentColumns.FirstOrDefault(x => x.ColumnId == columnId);
-                        var newColumn = newColumns.FirstOrDefault(x => x.ColumnId == columnId);
-
-                        if (newColumn == null)
-                        {
-                            InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].DeletedColumnName.Add(currentColumn.Name);
+                            InitModifiedTable(tableName);
+                            ModifiedTables[tableName].DeletedColumnName.Add(columnName);
 
                         }
-                        else if (currentColumn == null)
+                        else if (!CurrentDb.Tables[tableName].Columns.ContainsKey(columnName))
                         {
-                            InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].AddedColumns
-                                .Add(newColumn.Name, newColumn);
+                            InitModifiedTable(tableName);
+                            ModifiedTables[tableName].AddedColumns
+                                .Add(columnName, NewDb.Tables[tableName].Columns[columnName]);
 
                         }
-                        else if (!currentColumn.Equals(newColumn))
+                        else if (!CurrentDb.Tables[tableName].Columns[columnName]
+                            .Equals(NewDb.Tables[tableName].Columns[columnName]))
                         {
-                            InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].ModifiedColumns[newColumn.Name] = new[]
+                            InitModifiedTable(tableName);
+                            ModifiedTables[tableName].ModifiedColumns[columnName] = new[]
                             {
-                                currentColumn,
-                                newColumn
+                                CurrentDb.Tables[tableName].Columns[columnName],
+                                NewDb.Tables[tableName].Columns[columnName]
                             };
                         }
                     }
 
                     // indexes
-                    var currentIndexes = currentTable.Indexes ?? new Dictionary<string, Index>();
-                    var newIndexes = newTable.Indexes ?? new Dictionary<string, Index>();
+                    var currentIndexes = CurrentDb.Tables[tableName].Indexes ?? new Dictionary<string, Index>();
+                    var newIndexes = NewDb.Tables[tableName].Indexes ?? new Dictionary<string, Index>();
 
                     var indexNames = currentIndexes.Keys.Concat(newIndexes.Keys).Distinct();
 
@@ -162,21 +95,21 @@ namespace Dac.Net.Db
                     {
                         if (!newIndexes.ContainsKey(indexName))
                         {
-                            InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].DeletedIndexNames.Add(indexName);
+                            InitModifiedTable(tableName);
+                            ModifiedTables[tableName].DeletedIndexNames.Add(indexName);
 
                         }
                         else if (!currentIndexes.ContainsKey(indexName))
                         {
-                            InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].AddedIndexes.Add(indexName, newIndexes[indexName]);
+                            InitModifiedTable(tableName);
+                            ModifiedTables[tableName].AddedIndexes.Add(indexName, newIndexes[indexName]);
 
                         }
                         else if (!newIndexes[indexName]
                             .Equals(currentIndexes[indexName]))
                         {
-                            InitModifiedTable(newTable.Name);
-                            ModifiedTables[newTable.Name].ModifiedIndexes[indexName] = new[]
+                            InitModifiedTable(tableName);
+                            ModifiedTables[tableName].ModifiedIndexes[indexName] = new[]
                             {
                                 currentIndexes[indexName],
                                 newIndexes[indexName]
@@ -249,8 +182,6 @@ namespace Dac.Net.Db
 
     public class ModifiedTable
     {
-        public (string, string) Name { get; set; }
-        
         public Dictionary<string, Column> AddedColumns { get; set; } = new Dictionary<string, Column>();
         public Dictionary<string, Column[]> ModifiedColumns { get; set; } = new Dictionary<string, Column[]>();
         public List<string> DeletedColumnName { get; set; } = new List<string>();

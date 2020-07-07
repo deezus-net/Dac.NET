@@ -79,6 +79,7 @@ namespace Dac.Net.Core
             
             if (result.Success)
             {
+                
                 if(_commandLine.Query)
                 {
                     OutPut?.Invoke($"{result.Query}");
@@ -153,11 +154,8 @@ namespace Dac.Net.Core
 
             foreach (var (tableName, table) in diff.ModifiedTables)
             {
+                OutPut?.Invoke($"# {tableName}");
                 // console.log(`${ConsoleColor.fgGreen}%s${ConsoleColor.reset}`, `# ${tableName}`);
-
-                OutPut?.Invoke(table.Name.Item1 != table.Name.Item2
-                    ? $"# {table.Name.Item1} -> {table.Name.Item2}"
-                    : $"# {tableName}");
 
                 foreach (var (columnName, column) in table.AddedColumns)
                 {
@@ -175,10 +173,7 @@ namespace Dac.Net.Core
                 {
                     var orgColumn = column[0];
                     var newColumn = column[1];
-                    OutPut?.Invoke(orgColumn.Name != newColumn.Name
-                        ? $"  # {orgColumn.Name} -> {newColumn.Name}"
-                        : $"  # {columnName}");
-
+                    OutPut?.Invoke($"  # {columnName}");
 
                     //console.log(`${ConsoleColor.fgGreen}%s${ConsoleColor.reset}`, `  # ${columnName}`);
 
