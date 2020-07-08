@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - develop
+      - rename-project
 jobs:
   build:
     runs-on: ubuntu-latest

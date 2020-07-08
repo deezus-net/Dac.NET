@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Molder", "Molder\Molder.csproj", "{3F965F5D-D88E-4AE8-8E6B-E685E4D9936C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Molder.Test", "Molder.Test\Molder.Test.csproj", "{88F55311-CAA9-42F8-9456-FF4072D4ED9F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3F965F5D-D88E-4AE8-8E6B-E685E4D9936C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F965F5D-D88E-4AE8-8E6B-E685E4D9936C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F965F5D-D88E-4AE8-8E6B-E685E4D9936C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F965F5D-D88E-4AE8-8E6B-E685E4D9936C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88F55311-CAA9-42F8-9456-FF4072D4ED9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88F55311-CAA9-42F8-9456-FF4072D4ED9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88F55311-CAA9-42F8-9456-FF4072D4ED9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88F55311-CAA9-42F8-9456-FF4072D4ED9F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
