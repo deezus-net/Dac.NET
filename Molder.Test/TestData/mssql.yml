@@ -1,0 +1,57 @@
+tables:
+  configs:
+    columns:
+      id:
+        id: true
+      value:
+        type: nvarchar
+        length: 40
+        notNull: true
+  groups:
+    columns:
+      id:
+        id: true
+      name:
+        type: nvarchar
+        length: 150
+        notNull: true
+  users:
+    columns:
+      id:
+        id: true
+      name:
+        type: nvarchar
+        length: 100
+        notNull: true
+      number:
+        type: numeric
+        length: 5,3
+      group_id:
+        type: int
+        notNull: true
+        foreignKeys:
+          fk_groups:
+            table: groups
+            column: id
+      location:
+        type: geography
+        notNull: true
+      modified:
+        type: datetime
+        notNull: true
+      created:
+        type: datetime
+        notNull: true
+        default: getdate()
+    indexes:
+      IX_location:
+        columns:
+          location: ''
+        type: spatial
+        spatial:
+          tessellationSchema: GEOGRAPHY_AUTO_GRID
+          cellsPerObject: 12
+      IX_name:
+        columns:
+          name: asc
+        type: nonclustered
