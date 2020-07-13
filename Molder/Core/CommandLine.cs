@@ -256,9 +256,9 @@ namespace Molder.Core
             help.AppendLine("");
             help.AppendLine("  --help                    show help.");
             help.AppendLine("ex1");
-            help.AppendLine("  dac extract --host localhost --type mysql --user root --password password --database sample --output db.yml");
+            help.AppendLine("  molder extract --host localhost --type mysql --user root --password password --database sample --output db.yml");
             help.AppendLine("ex2");
-            help.AppendLine("  dac extract --hosts servers.yml --output .");
+            help.AppendLine("  molder extract --hosts servers.yml --output .");
             help.AppendLine("");
             help.AppendLine("https://github.com/deezus-net/Molder");
             return help.ToString();

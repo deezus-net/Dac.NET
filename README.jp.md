@@ -1,10 +1,10 @@
-![](https://github.com/deezus-net/Dac.Net/workflows/test/badge.svg)
-# DAC
-DAC(Database As Codeの略)はデータベースのテーブル構造をyamlで管理するツールです  
+![](https://github.com/deezus-net/Molder/workflows/test/badge.svg)
+# molder
+molderはデータベースのテーブル構造をyamlで管理するツールです  
 
 ## 使い方
 ```
-dac [コマンド] [オプション]
+molder [コマンド] [オプション]
 ```
 
 ## コマンド
@@ -39,67 +39,67 @@ dac [コマンド] [オプション]
 ### extract
 引数で接続情報を指定する場合
 ```
-dac extract --host localhost --type mysql --user root --password password --database dac -o .
+molder extract --host localhost --type mysql --user root --password password --database molder -o .
 ```
 ファイルで接続情報を設定する場合
 ```
-dac extract --hosts hosts.yml --output .
+molder extract --hosts hosts.yml --output .
 ```
 ------------
   
 ### create
 引数で接続情報を指定する場合
 ```
-dac create --host localhost --type mysql --user root --password password --database dac --input db.yml
+molder create --host localhost --type mysql --user root --password password --database molder --input db.yml
 ```
 ファイルで接続情報を設定する場合
 ```
-dac create --hosts hosts.yml --input db.yml
+molder create --hosts hosts.yml --input db.yml
 ```
 クエリを表示する場合
 ```
-dac create --hosts hosts.yml --input db.yml --query
+molder create --hosts hosts.yml --input db.yml --query
 ```
 ------------
   
 ### recreate
 引数で接続情報を指定する場合
 ```
-dac recreate --host localhost --type mysql --user root --password password --database dac --input db.yml
+molder recreate --host localhost --type mysql --user root --password password --database molder --input db.yml
 ```
 ファイルで接続情報を設定する場合
 ```
-dac recreate --hosts hosts.yml --input db.yml
+molder recreate --hosts hosts.yml --input db.yml
 ```
 クエリを表示する場合
 ```
-dac recreate --hosts hosts.yml --input db.yml --query
+molder recreate --hosts hosts.yml --input db.yml --query
 ```
 ------------
   
 ### update
 引数で接続情報を指定する場合
 ```
-dac update --host localhost --type mysql --user root --password password --database dac --input db.yml
+molder update --host localhost --type mysql --user root --password password --database molder --input db.yml
 ```
 ファイルで接続情報を設定する場合
 ```
-dac update --hosts hosts.yml --input db.yml
+molder update --hosts hosts.yml --input db.yml
 ```
 クエリを表示する場合
 ```
-dac update --hosts hosts.yml --inpit db.yml --query
+molder update --hosts hosts.yml --inpit db.yml --query
 ```
 ------------
   
 ### diff
 引数で接続情報を指定する場合
 ```
-dac diff --host localhost --type mysql --user root --password password --database dac --input db.yml
+molder diff --host localhost --type mysql --user root --password password --database molder --input db.yml
 ```
 ファイルで接続情報を設定する場合
 ```
-dac diff --hosts hosts.yml --input db.yml
+molder diff --hosts hosts.yml --input db.yml
 ```
 
 ## hostsに関して
@@ -112,33 +112,33 @@ server1:
   host: localhost
   user: db_user_1
   password: password
-  database: dac
+  database: molder
  
 server2:
   type: pgsql
   host: localhost
   user: db_user_2
   password: password
-  database: dac
+  database: molder
 
 server3:
   type: mssql
   host: localhost
   user: sa
   password: !Passw0rd
-  database: dac
+  database: molder
 ```
 
 ### extractの例
 全接続先に対して行う場合
 server1.yml, server2.yml, server3.ymlと接続先ごとにファイルが作成されます
 ```
-dac extract --hosts hosts.yml --output .
+molder extract --hosts hosts.yml --output .
 ```
 
 接続先名を指定する場合
 server1のみをextractし、server1.ymlが作成されます
 ```
-dac extract --hosts hosts.yml --host server1 --output .
+molder extract --hosts hosts.yml --host server1 --output .
 
 ```

@@ -1,10 +1,10 @@
-![](https://github.com/deezus-net/Dac.Net/workflows/test/badge.svg)
-# DAC
-DAC (Database As Code) is a tool to manage the database table structure with yaml  
+![](https://github.com/deezus-net/Molder/workflows/test/badge.svg)
+# molder
+molder is a tool to manage the database table structure with yaml  
 
 ## How to use
 ```
-dac [command] [option]
+molder [command] [option]
 ```
 
 ## command
@@ -39,67 +39,67 @@ dac [command] [option]
 ### extract
 When specifying connection information with argument
 ```
-dac extract --host localhost --type mysql --user root --password password --database dac --output .
+molder extract --host localhost --type mysql --user root --password password --database molder --output .
 ```
 When setting connection information in a file
 ```
-dac extract --hosts hosts.yml --output .
+molder extract --hosts hosts.yml --output .
 ```
 --------------
   
 ### create
 When specifying connection information with argument
 ```
-dac create --host localhost --type mysql --user root --password password --database dac --input db.yml
+molder create --host localhost --type mysql --user root --password password --database molder --input db.yml
 ```
 When setting connection information in a file
 ```
-dac create --hosts hosts.yml --input db.yml
+molder create --hosts hosts.yml --input db.yml
 ```
 When query is displayed
 ```
-dac create --hosts hosts.yml --input db.yml --query
+molder create --hosts hosts.yml --input db.yml --query
 ```
 --------------
   
 ### recreate
 When specifying connection information with argument
 ```
-dac recreate --host localhost --type mysql --user root --password password --database dac --input db.yml
+molder recreate --host localhost --type mysql --user root --password password --database molder --input db.yml
 ```
 When setting connection information in a file
 ```
-dac recreate --hosts hosts.yml --input db.yml
+molder recreate --hosts hosts.yml --input db.yml
 ```
 When query is displayed
 ```
-dac recreate --hosts hosts.yml --input db.yml --query
+molder recreate --hosts hosts.yml --input db.yml --query
 ```
 --------------
   
 ### update
 When specifying connection information with argument
 ```
-dac update --hosts localhost --type mysql --user root --password password --database dac --input db.yml
+molder update --hosts localhost --type mysql --user root --password password --database molder --input db.yml
 ```
 When setting connection information in a file
 ```
-dac update --hosts hosts.yml --input db.yml
+molder update --hosts hosts.yml --input db.yml
 ```
 When query is displayed
 ```
-dac update --hosts hosts.yml --input db.yml --query
+molder update --hosts hosts.yml --input db.yml --query
 ```
 --------------
   
 ### diff
 When specifying connection information with argument
 ```
-dac diff --host localhost --type mysql --user root --password password --database dac --input db.yml
+molder diff --host localhost --type mysql --user root --password password --database molder --input db.yml
 ```
 When setting connection information in a file
 ```
-dac diff --hosts hosts.yml --input db.yml
+molder diff --hosts hosts.yml --input db.yml
 ```
 
 ## About hosts
@@ -112,32 +112,32 @@ server 1:
   host: localhost
   user: db_user_1
   password: password
-  database: dac
+  database: molder
  
 server 2:
   type: pgsql
   host: localhost
   user: db_user_2
   password: password
-  database: dac
+  database: molder
 
 server3:
   type: mssql
   host: localhost
   user: sa
   password: !Passw0rd
-  database: dac
+  database: molder
 ```
 
 ### extract example
 When doing to all connection destinations  
 A file is created for server1.yml, server2.yml, server3.yml and connection destination
 ```
-dac extract --input hosts.yml --output .
+molder extract --input hosts.yml --output .
 ```
 
 When specifying the connection destination name  
 It extracts only 'server1' and creates server1.yml
 ```
-dac extract --input hosts.yml --host server1 --output .
+molder extract --input hosts.yml --host server1 --output .
 ```
