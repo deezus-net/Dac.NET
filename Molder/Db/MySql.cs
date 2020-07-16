@@ -370,9 +370,9 @@ namespace Molder.Db
                     var check = !string.IsNullOrWhiteSpace(column.Check) ? $") CHECK({column.Check}) " : "";
 
                     query.AppendLine(
-                        $"ALTER TABLE `{tableName}` ADD COLUMN `{columnName}` {type}{((column.Id ?? true) ? " AUTO_INCREMENT" : "")}{notNull}{def}{check};");
+                        $"ALTER TABLE `{tableName}` ADD COLUMN `{columnName}` {type}{((column.Id ?? false) ? " AUTO_INCREMENT" : "")}{notNull}{def}{check};");
 
-                    foreach (var (fkName, fk) in column.ForeignKeys)
+                    foreach (var (fkName, fk) in column.ForeignKeys ?? new Dictionary<string, ForeignKey>())
                     {
                         createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
                             fk.Update, fk.Delete));
