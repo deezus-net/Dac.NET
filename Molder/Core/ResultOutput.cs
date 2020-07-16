@@ -7,12 +7,16 @@ namespace Molder.Core
     public class ResultOutput
     {
         private readonly IOutput _output;
+        private const ConsoleColor AddColor = ConsoleColor.Cyan;
+        private const ConsoleColor ModifyColor = ConsoleColor.Green;
+        private const ConsoleColor DeleteColor = ConsoleColor.Red;
+
         public ResultOutput(IOutput output)
         {
             _output = output;
         }
-        
-        
+
+
         public void WriteLine(string message)
         {
             _output.WriteLine(message);
@@ -76,40 +80,45 @@ namespace Molder.Core
             _output.WriteLine("* tables");
             foreach (var (tableName, table) in diff.AddedTables)
             {
-                //  console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `+ ${tableName}`);
-                _output.WriteLine($"+ {tableName}");
+                _output.SetColor(AddColor);
+                _output.WriteLine($"  + {tableName}");
+                _output.ClearColor();
             }
 
             foreach (var tableName in diff.DeletedTableNames)
             {
-                _output.WriteLine($"- {tableName}");
-                //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
+                _output.SetColor(DeleteColor);
+                _output.WriteLine($"  - {tableName}");
+                _output.ClearColor();
             }
 
             foreach (var (tableName, table) in diff.ModifiedTables)
             {
-                _output.WriteLine($"# {tableName}");
-                // console.log(`${ConsoleColor.fgGreen}%s${ConsoleColor.reset}`, `# ${tableName}`);
+                _output.SetColor(ModifyColor);
+                _output.WriteLine($"  # {tableName}");
+                _output.ClearColor();
 
                 foreach (var (columnName, column) in table.AddedColumns)
                 {
-                    _output.WriteLine($"  + {columnName}");
-                    //   console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `  + ${columnName}`);
+                    _output.SetColor(AddColor);
+                    _output.WriteLine($"    + {columnName}");
+                    _output.ClearColor();
                 }
 
                 foreach (var columnName in table.DeletedColumnName)
                 {
-                    _output.WriteLine($"  - {columnName}");
-                    //     console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `  - ${columnName}`);
+                    _output.SetColor(DeleteColor);
+                    _output.WriteLine($"    - {columnName}");
+                    _output.ClearColor();
                 }
 
                 foreach (var (columnName, column) in table.ModifiedColumns)
                 {
                     var orgColumn = column[0];
                     var newColumn = column[1];
-                    _output.WriteLine($"  # {columnName}");
+                    _output.SetColor(ModifyColor);
+                    _output.WriteLine($"    # {columnName}");
 
-                    //console.log(`${ConsoleColor.fgGreen}%s${ConsoleColor.reset}`, `  # ${columnName}`);
 
                     if (orgColumn.Type != newColumn.Type || orgColumn.Length != newColumn.Length)
                     {
@@ -126,33 +135,34 @@ namespace Molder.Core
                         }
 
 
-                        _output.WriteLine($"      type: {orgType} -> {newType}");
-                        //   console.log(`      type: ${orgColumn.type}${orgColumn.length ? `(${orgColumn.length})` : ``} -> ${column.type}${column.length ? `(${column.length})` : ``}`);
+                        _output.WriteLine($"        type: {orgType} -> {newType}");
                     }
 
                     if (orgColumn.Pk != newColumn.Pk)
                     {
-                        _output.WriteLine($"      pk: {orgColumn.Pk} -> {newColumn.Pk}");
-                        //    console.log(`      pk: ${orgColumn.pk} -> ${column.pk}`);
+                        _output.WriteLine($"        pk: {orgColumn.Pk} -> {newColumn.Pk}");
                     }
 
                     if (orgColumn.NotNull != newColumn.NotNull)
                     {
-                        _output.WriteLine($"      not null: {orgColumn.NotNull} -> {newColumn.NotNull}");
-                        //   console.log(`      not null: ${orgColumn.notNull} -> ${column.notNull}`);
+                        _output.WriteLine($"        not null: {orgColumn.NotNull} -> {newColumn.NotNull}");
                     }
+
+                    _output.ClearColor();
                 }
 
                 foreach (var (indexName, index) in table.AddedIndexes)
                 {
-                    _output.WriteLine($"  + {indexName}");
-                    // console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `  + ${indexName}`);
+                    _output.SetColor(AddColor);
+                    _output.WriteLine($"    + {indexName}");
+                    _output.ClearColor();
                 }
 
                 foreach (var indexName in table.DeletedIndexNames)
                 {
-                    _output.WriteLine($"  - {indexName}");
-                    //     console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `  - ${indexName}`);
+                    _output.SetColor(DeleteColor);
+                    _output.WriteLine($"    - {indexName}");
+                    _output.ClearColor();
                 }
 
                 foreach (var (indexName, indices) in table.ModifiedIndexes)
@@ -160,42 +170,41 @@ namespace Molder.Core
                     var orgIndex = indices[0];
                     var newIndex = indices[1];
 
-                    _output.WriteLine($"  # {indexName}");
-                    // console.log(`${ConsoleColor.fgGreen}%s${ConsoleColor.reset}`, `  # ${indexName}`);
+                    _output.SetColor(ModifyColor);
+                    _output.WriteLine($"    # {indexName}");
+
 
                     if (orgIndex.Type != newIndex.Type)
                     {
-                        _output.WriteLine($"      type: {orgIndex.Type} -> {newIndex.Type}");
-                        //   console.log(`      columns: ${orgIndexColumns} -> ${indexColumns}`);
+                        _output.WriteLine($"        type: {orgIndex.Type} -> {newIndex.Type}");
                     }
 
                     var orgIndexColumns = string.Join(",", orgIndex.Columns.Select(x => $"{x.Key} {x.Value}"));
                     var newIndexColumns = string.Join(",", newIndex.Columns.Select(x => $"{x.Key} {x.Value}"));
                     if (orgIndexColumns != newIndexColumns)
                     {
-                        _output.WriteLine($"      columns: {orgIndexColumns} -> {newIndexColumns}");
-                        //   console.log(`      columns: ${orgIndexColumns} -> ${indexColumns}`);
+                        _output.WriteLine($"        columns: {orgIndexColumns} -> {newIndexColumns}");
                     }
 
                     if (orgIndex.Unique != newIndex.Unique)
                     {
-                        _output.WriteLine($"      unique: ${orgIndex.Unique} -> ${newIndex.Unique}");
-                        //   console.log(`      unique: ${orgIndex.unique} -> ${index.unique}`);
+                        _output.WriteLine($"        unique: ${orgIndex.Unique} -> ${newIndex.Unique}");
                     }
 
                     if (!(orgIndex.Spatial ?? new Spatial()).Equals(newIndex.Spatial ?? new Spatial()))
                     {
-                        _output.WriteLine($"      spatial:");
+                        _output.WriteLine($"        spatial:");
                         _output.WriteLine(
-                            $"        tessellationSchema: {orgIndex.Spatial?.TessellationSchema} -> {newIndex.Spatial?.TessellationSchema}");
-                        _output.WriteLine($"        level1: {orgIndex.Spatial?.Level1} -> {newIndex.Spatial?.Level1}");
-                        _output.WriteLine($"        level2: {orgIndex.Spatial?.Level2} -> {newIndex.Spatial?.Level2}");
-                        _output.WriteLine($"        level3: {orgIndex.Spatial?.Level3} -> {newIndex.Spatial?.Level3}");
-                        _output.WriteLine($"        level4: {orgIndex.Spatial?.Level4} -> {newIndex.Spatial?.Level4}");
+                            $"          tessellationSchema: {orgIndex.Spatial?.TessellationSchema} -> {newIndex.Spatial?.TessellationSchema}");
+                        _output.WriteLine($"          level1: {orgIndex.Spatial?.Level1} -> {newIndex.Spatial?.Level1}");
+                        _output.WriteLine($"          level2: {orgIndex.Spatial?.Level2} -> {newIndex.Spatial?.Level2}");
+                        _output.WriteLine($"          level3: {orgIndex.Spatial?.Level3} -> {newIndex.Spatial?.Level3}");
+                        _output.WriteLine($"          level4: {orgIndex.Spatial?.Level4} -> {newIndex.Spatial?.Level4}");
                         _output.WriteLine(
-                            $"        cellsPerObject: {orgIndex.Spatial?.CellsPerObject} -> {newIndex.Spatial?.CellsPerObject}");
+                            $"          cellsPerObject: {orgIndex.Spatial?.CellsPerObject} -> {newIndex.Spatial?.CellsPerObject}");
                     }
 
+                    _output.ClearColor();
                 }
             }
         }
@@ -210,21 +219,24 @@ namespace Molder.Core
             _output.WriteLine("* views");
             foreach (var (viewName, definition) in diff.AddedViews)
             {
-                //  console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `+ ${tableName}`);
-                _output.WriteLine($"+ {viewName}");
+                _output.SetColor(AddColor);
+                _output.WriteLine($"  + {viewName}");
+                _output.ClearColor();
             }
 
             foreach (var viewName in diff.DeletedViewNames)
             {
-                _output.WriteLine($"- {viewName}");
-                //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
+                _output.SetColor(DeleteColor);
+                _output.WriteLine($"  - {viewName}");
+                _output.ClearColor();
             }
 
             foreach (var (viewName, definitions) in diff.ModifiedViews)
             {
-                _output.WriteLine($"# {viewName}");
-                _output.WriteLine($"  {definitions[0]} -> {definitions[1]}");
-                //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
+                _output.SetColor(ModifyColor);
+                _output.WriteLine($"  # {viewName}");
+                _output.WriteLine($"    {definitions[0]} -> {definitions[1]}");
+                _output.ClearColor();
             }
         }
 
@@ -239,35 +251,38 @@ namespace Molder.Core
 
             foreach (var (synonymName, synonym) in diff.AddedSynonyms)
             {
-                //  console.log(`${ConsoleColor.fgCyan}%s${ConsoleColor.reset}`, `+ ${tableName}`);
-                _output.WriteLine($"+ {synonymName}");
+                _output.SetColor(AddColor);
+                _output.WriteLine($"  + {synonymName}");
+                _output.ClearColor();
             }
 
             foreach (var synonymName in diff.DeletedSynonymNames)
             {
-                _output.WriteLine($"- {synonymName}");
-                //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
+                _output.SetColor(DeleteColor);
+                _output.WriteLine($"  - {synonymName}");
+                _output.ClearColor();
             }
 
             foreach (var (synonymName, synonyms) in diff.ModifiedSynonyms)
             {
-                _output.WriteLine($"# {synonymName}");
+                _output.SetColor(ModifyColor);
+                _output.WriteLine($"  # {synonymName}");
                 if (synonyms[0].Database != synonyms[1].Database)
                 {
-                    _output.WriteLine($"  database: {synonyms[0].Database} -> {synonyms[1].Database}");
+                    _output.WriteLine($"    database: {synonyms[0].Database} -> {synonyms[1].Database}");
                 }
 
                 if (synonyms[0].Schema != synonyms[1].Schema)
                 {
-                    _output.WriteLine($"  schema: {synonyms[0].Schema} -> {synonyms[1].Schema}");
+                    _output.WriteLine($"    schema: {synonyms[0].Schema} -> {synonyms[1].Schema}");
                 }
 
                 if (synonyms[0].Object != synonyms[1].Object)
                 {
-                    _output.WriteLine($"  object: {synonyms[0].Object} -> {synonyms[1].Object}");
+                    _output.WriteLine($"    object: {synonyms[0].Object} -> {synonyms[1].Object}");
                 }
 
-                //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
+                _output.ClearColor();
             }
         }
 

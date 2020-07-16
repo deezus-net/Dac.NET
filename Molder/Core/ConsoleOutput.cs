@@ -8,21 +8,21 @@ namespace Molder.Core
         {
             Console.Write(message);
         }
-        
+
         public void WriteLine(string message)
         {
             Console.WriteLine(message);
         }
-        public void SetColor(string color)
+
+        public void SetColor(ConsoleColor color)
         {
-            throw new NotImplementedException();
+            Console.ForegroundColor = color;
         }
 
         public void ClearColor()
         {
-            throw new NotImplementedException();
+            Console.ResetColor();
         }
 
-       
     }
 }

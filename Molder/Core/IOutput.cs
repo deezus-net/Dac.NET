@@ -1,3 +1,4 @@
+using System;
 using Molder.Db;
 
 namespace Molder.Core
@@ -6,7 +7,7 @@ namespace Molder.Core
     {
         void WriteLine(string message);
         void Write(string message);
-        void SetColor(string color);
+        void SetColor(ConsoleColor color);
         void ClearColor();
     }
 }
