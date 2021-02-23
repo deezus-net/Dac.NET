@@ -227,10 +227,10 @@ namespace Molder.Core
 
         private static string Help()
         {
-            var ver = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
+            var assembly = Assembly.GetExecutingAssembly();
             
             var help = new StringBuilder();
-            help.AppendLine($"{ver.ProductName} ver.{ver.FileVersion}");
+            help.AppendLine($"{assembly.GetName().Name} ver.{assembly.GetName().Version}");
             help.AppendLine("usage [command] [options]");
             help.AppendLine("commands");
             help.AppendLine($"  {Define.Command.Create}");

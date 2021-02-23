@@ -1,7 +1,23 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=9e89d349_002Decad_002D4de7_002Dbc60_002D7ecca7b9143b/@EntryIndexedValue">&lt;SessionState ContinuousTestingIsOn="False" ContinuousTestingMode="0" FrameworkVersion="{x:Null}" IsLocked="False" Name="WriteLineTest" PlatformMonoPreference="{x:Null}" PlatformType="{x:Null}" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"&gt;
-  &lt;TestAncestor&gt;
-    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::.NETCoreApp,Version=v3.1::Molder.Test.Core.ResultOutputTest.WriteLineTest&lt;/TestId&gt;
-    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::.NETCoreApp,Version=v3.1::Molder.Test.Core.ResultOutputTest.ErrorTest&lt;/TestId&gt;
-  &lt;/TestAncestor&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=9e89d349_002Decad_002D4de7_002Dbc60_002D7ecca7b9143b/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="WriteLineTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;TestAncestor&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.PgSqlTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MySqlTest.ConnectTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MySqlTest.DropTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MySqlTest.CreateTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MySqlTest.ExtractTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MySqlTest.ReCreateTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MySqlTest.DiffTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MySqlTest.UpdateTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MySqlTest.QueryTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MsSqlTest.ConnectTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MsSqlTest.DropTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MsSqlTest.CreateTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MsSqlTest.ExtractTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MsSqlTest.ReCreateTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MsSqlTest.DiffTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MsSqlTest.UpdateTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Db.MsSqlTest.QueryTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::88F55311-CAA9-42F8-9456-FF4072D4ED9F::net5.0::Molder.Test.Core.MainTest.HelpTest&lt;/TestId&gt;&#xD;
+  &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
