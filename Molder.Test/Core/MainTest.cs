@@ -9,9 +9,11 @@ namespace Molder.Test.Core
     public class MainTest
     {
         private readonly ITestOutputHelper _output;
+        private readonly ResultOutput _resultOutput;
         public MainTest(ITestOutputHelper output)
         {
             _output = output;
+            _resultOutput = new ResultOutput(new Output(_output));
         }
 /*
         [Fact]
@@ -68,5 +70,13 @@ namespace Molder.Test.Core
                 {OutPut = _output.WriteLine};
             main.Run();
         }*/
+
+        [Fact]
+        public void HelpTest()
+        {
+            var main = new Main("help")
+                {OutPut = _resultOutput };
+            main.Run();
+        }
     }
 }

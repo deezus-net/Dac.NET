@@ -10,7 +10,7 @@ namespace Molder
         {
             try
             {
-                var core = new Main(args) {OutPut = Console.WriteLine};
+                var core = new Main(args) {OutPut = new ResultOutput(new ConsoleOutput())};
                 core.Run();
             }
             catch (Exception e)

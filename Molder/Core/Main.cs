@@ -8,7 +8,7 @@ namespace Molder.Core
     public class Main
     {
         private readonly CommandLine _commandLine;
-        public Action<string> OutPut { get; set; }
+        public ResultOutput OutPut { get; set; }
 
         public Main(params string[] args)
         {
@@ -19,7 +19,7 @@ namespace Molder.Core
         {
             if (!_commandLine.Check())
             {
-                OutPut?.Invoke(_commandLine.ErrorMessage);
+                OutPut?.Error(_commandLine.ErrorMessage);
                 return;
             }
             
@@ -75,8 +75,9 @@ namespace Molder.Core
         {
             db?.Connect();
             var result = db?.Create(_commandLine.DataBase, _commandLine.Query);
+            OutPut?.Create(result, _commandLine, db?.GetName());
             
-            
+            /*
             if (result.Success)
             {
                 
@@ -100,6 +101,7 @@ namespace Molder.Core
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
             }
+            */
             db?.Close();
         }
 
@@ -112,7 +114,9 @@ namespace Molder.Core
             db?.Connect();
             var diff = db?.Diff(_commandLine.DataBase);
             db?.Close();
-
+            
+            OutPut?.Diff(diff, db?.GetName());
+/*
             if (!diff.HasDiff)
             {
                 OutPut?.Invoke($"[{db?.GetName()}] no difference");
@@ -125,14 +129,14 @@ namespace Molder.Core
             ShowSynonymDiff(diff);
 
             OutPut?.Invoke("");
-
+*/
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="diff"></param>
-        private void ShowTableDiff(Diff diff)
+      /*  private void ShowTableDiff(Diff diff)
         {
             if (!diff.AddedTables.Any() && !diff.DeletedTableNames.Any() && !diff.ModifiedTables.Any())
             {
@@ -262,13 +266,13 @@ namespace Molder.Core
 
                 }
             }
-        }
+        }*/
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="diff"></param>
-        private void ShowViewDiff(Diff diff)
+    /*    private void ShowViewDiff(Diff diff)
         {
             if (!diff.AddedViews.Any() && !diff.DeletedViewNames.Any() && !diff.ModifiedViews.Any())
             {
@@ -294,12 +298,12 @@ namespace Molder.Core
                 //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
             }
         }
-
+*/
         /// <summary>
         /// 
         /// </summary>
         /// <param name="diff"></param>
-        private void ShowSynonymDiff(Diff diff)
+    /*    private void ShowSynonymDiff(Diff diff)
         {
             if (!diff.AddedSynonyms.Any() && !diff.DeletedSynonymNames.Any() && !diff.ModifiedSynonyms.Any())
             {
@@ -337,7 +341,7 @@ namespace Molder.Core
                 }
                 //    console.log(`${ConsoleColor.fgRed}%s${ConsoleColor.reset}`, `- ${tableName}`);
             }
-        }
+        }*/
 
         /// <summary>
         /// 
@@ -348,7 +352,9 @@ namespace Molder.Core
             db?.Connect();
             var result = db?.Drop(_commandLine.DataBase, _commandLine.Query);
             db?.Close();
+            OutPut?.Drop(result, _commandLine, db?.GetName());
             
+            /*
             if (result.Success)
             {
                 if(_commandLine.Query)
@@ -371,6 +377,7 @@ namespace Molder.Core
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
             }
+            */
         }
 
         /// <summary>
@@ -407,7 +414,8 @@ namespace Molder.Core
         private void Query(IDb db)
         {
             var query = db?.Query(_commandLine.DataBase);
-            OutPut?.Invoke(query);
+          //  OutPut?.Invoke(query);
+            OutPut?.WriteLine(query);
         }
 
         /// <summary>
@@ -418,8 +426,8 @@ namespace Molder.Core
         {
             db?.Connect();
             var result = db?.Update(_commandLine.DataBase, _commandLine.Query, _commandLine.Drop);
-            
-            
+            OutPut?.Update(result, _commandLine, db?.GetName());
+            /*
             if (result.Success)
             {
                 if (string.IsNullOrWhiteSpace(result.Query))
@@ -445,7 +453,7 @@ namespace Molder.Core
                 OutPut?.Invoke($"{result.Exception.Message}");
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
-            }
+            }*/
             
             db?.Close();
         }
@@ -458,8 +466,8 @@ namespace Molder.Core
         {
             db?.Connect();
             var result = db?.ReCreate(_commandLine.DataBase, _commandLine.Query);
-            
-            if (result.Success)
+            OutPut?.ReCreate(result, _commandLine, db?.GetName());
+            /*if (result.Success)
             {
                 if(_commandLine.Query)
                 {
@@ -480,7 +488,7 @@ namespace Molder.Core
                 OutPut?.Invoke($"{result.Exception.Message}");
                 OutPut?.Invoke("-------------------------");
                 OutPut?.Invoke($"{result.Query}");
-            }
+            }*/
             db?.Close();
         }
     }

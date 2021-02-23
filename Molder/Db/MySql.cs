@@ -91,7 +91,7 @@ namespace Molder.Db
             foreach (var (tableName, table) in tables)
             {
                 // get column list
-                foreach (DataRow row in GetResult($"DESCRIBE {tableName}").Rows)
+                foreach (DataRow row in GetResult($"DESCRIBE `{tableName}`").Rows)
                 {
                     var type = row.Field<string>("Type");
                     var length = "0";
@@ -189,7 +189,7 @@ namespace Molder.Db
                 }
 
                 // get index list
-                foreach (DataRow row in GetResult($"SHOW INDEX FROM {tableName} WHERE Key_name != 'PRIMARY'").Rows)
+                foreach (DataRow row in GetResult($"SHOW INDEX FROM `{tableName}` WHERE Key_name != 'PRIMARY'").Rows)
                 {
 
                     var indexName = row.Field<string>("Key_name");
@@ -199,7 +199,7 @@ namespace Molder.Db
                         continue;
                     }
 
-                    var nonUnique = row.Field<long>("Non_unique");
+                    var nonUnique = Convert.ToInt64(row["Non_unique"]);
                     var collation = row.Field<string>("Collation");
                     if (!table.Indexes.ContainsKey(indexName))
                     {
@@ -370,9 +370,9 @@ namespace Molder.Db
                     var check = !string.IsNullOrWhiteSpace(column.Check) ? $") CHECK({column.Check}) " : "";
 
                     query.AppendLine(
-                        $"ALTER TABLE `{tableName}` ADD COLUMN `{columnName}` {type}{((column.Id ?? true) ? " AUTO_INCREMENT" : "")}{notNull}{def}{check};");
+                        $"ALTER TABLE `{tableName}` ADD COLUMN `{columnName}` {type}{((column.Id ?? false) ? " AUTO_INCREMENT" : "")}{notNull}{def}{check};");
 
-                    foreach (var (fkName, fk) in column.ForeignKeys)
+                    foreach (var (fkName, fk) in column.ForeignKeys ?? new Dictionary<string, ForeignKey>())
                     {
                         createFkQuery.Add(CreateAlterForeignKey(fkName, tableName, columnName, fk.Table, fk.Column,
                             fk.Update, fk.Delete));
